@@ -830,6 +830,17 @@ body.night .task .who.tot{color:#9CC0E6}body.night .task .who.soi{color:#F0907C}
 .ovbox small{display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
 .ovbox>b{display:block;font-size:34px;font-weight:800;letter-spacing:.18em;color:var(--ink)}
 .ovurl{display:block;width:100%;box-sizing:border-box;margin:4px 0 8px;border:1.5px solid var(--bark);border-radius:10px;padding:8px 10px;font:500 13px/1.3 var(--body);background:#fff;color:var(--ink)}
+/* Gợi ý tên người chơi từ database (bảng players) */
+#sug{position:fixed;z-index:90;background:var(--paper);border:1.5px solid var(--bark);border-radius:12px;box-shadow:0 6px 0 rgba(62,39,35,.25),0 10px 24px rgba(0,0,0,.25);overflow-y:auto;overscroll-behavior:contain;max-height:min(260px,40vh)}
+#sug[hidden]{display:none}
+#sug button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 12px;border:0;border-top:1px solid #E6DAB0;background:transparent;font:600 15px var(--body);color:var(--ink);cursor:pointer}
+#sug button:first-child{border-top:0}
+#sug button:active,#sug button:hover{background:#FBF4D6}
+#sug .sn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sug .sn small{font-weight:500;color:var(--mute);margin-left:6px}
+#sug .st{flex:none;font:700 11px var(--body);color:var(--parch);background:var(--night);border-radius:6px;padding:2px 7px}
+#sug .se{flex:none;font:600 12px var(--body);color:var(--mute)}
+#sug .sd{padding:10px 12px;font:500 13px var(--body);color:var(--mute)}
 </style>
 
 <div class="wrap">
@@ -2229,6 +2240,68 @@ document.addEventListener('click',e=>{
   }
   render();
 });
+/* Gợi ý tên từ database website (Supabase, bảng players). Chỉ đọc, dùng khóa công khai (publishable). */
+const SUPA_URL='https://zvhsorwzdvxpvgptsycq.supabase.co';
+const SUPA_KEY='sb_publishable_gl_psXKOJb5qYscADX1muA_9nN4tgJA';
+const PDB_KEY='qtdl-players-db';
+let PDB=[]; let sugQuiet=false, sugFor=null;
+try{ const c=JSON.parse(localStorage.getItem(PDB_KEY)||'null'); if(Array.isArray(c)) PDB=c; }catch(e){}
+async function loadPlayersDb(){
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/players?select=id,name,nickname,tier,elo&order=name.asc&limit=1000',{headers:{apikey:SUPA_KEY}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    if(Array.isArray(d)&&d.length){ PDB=d.map(x=>({id:x.id,name:String(x.name||'').trim(),nickname:x.nickname?String(x.nickname).trim():'',tier:x.tier||'',elo:x.elo})).filter(x=>x.name);
+      try{ localStorage.setItem(PDB_KEY,JSON.stringify(PDB)); }catch(e){} }
+  }catch(e){ /* lỗi mạng: dùng bản lưu lần trước, vẫn gõ tay được */ }
+}
+loadPlayersDb();
+const viNorm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'d').toLowerCase().replace(/\s+/g,' ').trim();
+function sugSearch(q,seat){
+  q=viNorm(q); if(!q) return [];
+  const used=new Set(SEATS.filter(p=>String(p)!==String(seat)).map(p=>viNorm(S.names[p])).filter(Boolean));
+  const out=[];
+  for(const pl of PDB){
+    const nn=viNorm(pl.name), nk=viNorm(pl.nickname); if(used.has(nn)) continue;
+    const w=x=>x.split(' ').some(t=>t.startsWith(q));
+    let sc=-1;
+    if(nn.startsWith(q)) sc=0; else if(w(nn)) sc=1; else if(nk&&(nk.startsWith(q)||w(nk))) sc=1; else if(nn.includes(q)||(nk&&nk.includes(q))) sc=2;
+    if(sc>=0) out.push({pl,sc,nn});
+  }
+  out.sort((a,b)=>a.sc-b.sc||a.nn.localeCompare(b.nn,'vi'));
+  return out.slice(0,6).map(x=>x.pl);
+}
+function sugEl(){ let e=document.getElementById('sug'); if(!e){ e=document.createElement('div'); e.id='sug'; e.hidden=true; e.setAttribute('role','listbox');
+  e.addEventListener('pointerdown',ev=>{ ev.preventDefault(); const b=ev.target.closest('button[data-pick]'); if(b) sugPick(sugFor,PDBBY[b.dataset.pick]); });
+  document.body.appendChild(e); } return e; }
+let PDBBY={};
+function sugHide(){ const e=document.getElementById('sug'); if(e) e.hidden=true; sugFor=null; }
+function sugShow(inp){
+  if(sugQuiet||S.step!=='players'||!inp||!inp.dataset||!inp.dataset.name){ sugHide(); return; }
+  const seat=+inp.dataset.name, list=sugSearch(inp.value,seat), e=sugEl();
+  if(!list.length||(list.length===1&&viNorm(list[0].name)===viNorm(inp.value))){ sugHide(); return; }
+  sugFor=seat; PDBBY={};
+  e.innerHTML=list.map(pl=>{ PDBBY[pl.id]=pl; return `<button type="button" role="option" data-pick="${esc(pl.id)}"><span class="sn">${esc(pl.name)}${pl.nickname?`<small>${esc(pl.nickname)}</small>`:''}</span>${pl.tier?`<span class="st">${esc(pl.tier)}</span>`:''}${pl.elo!=null?`<span class="se">${esc(pl.elo)}</span>`:''}</button>`; }).join('');
+  e.hidden=false; sugPlace(inp);
+}
+function sugPlace(inp){
+  const e=document.getElementById('sug'); if(!e||e.hidden||!inp) return;
+  const r=(inp.closest('.plist')||inp).getBoundingClientRect(), ir=inp.getBoundingClientRect(), vv=window.visualViewport;
+  const vTop=vv?vv.offsetTop:0, vBot=vv?vv.offsetTop+vv.height:innerHeight, h=e.offsetHeight;
+  e.style.left=Math.max(8,r.left)+'px'; e.style.width=Math.min(r.width,innerWidth-16)+'px';
+  if(ir.bottom+4+h>vBot-6&&ir.top-4-h>vTop) e.style.top=(ir.top-4-h)+'px'; else e.style.top=(ir.bottom+4)+'px';
+}
+function sugPick(seat,pl){
+  if(!pl||!seat) return;
+  const inp=document.querySelector(`input[data-name="${seat}"]`); if(!inp) return;
+  sugQuiet=true; inp.value=pl.name.slice(0,20); inp.dispatchEvent(new Event('input',{bubbles:true})); sugQuiet=false; sugHide();
+  const nx=document.querySelector(`input[data-name="${+seat+1}"]`); if(nx) nx.focus(); else inp.blur();
+}
+document.addEventListener('focusin',e=>{ if(e.target.dataset&&e.target.dataset.name) sugShow(e.target); else sugHide(); });
+document.addEventListener('focusout',e=>{ if(e.target.dataset&&e.target.dataset.name) setTimeout(()=>{ if(!document.activeElement||!document.activeElement.dataset||!document.activeElement.dataset.name) sugHide(); },120); });
+window.addEventListener('scroll',()=>{ const a=document.activeElement; if(sugFor&&a) sugPlace(a); },{passive:true});
+window.addEventListener('resize',()=>{ const a=document.activeElement; if(sugFor&&a) sugPlace(a); });
+if(window.visualViewport) window.visualViewport.addEventListener('resize',()=>{ const a=document.activeElement; if(sugFor&&a) sugPlace(a); });
 /* Gõ tên: cập nhật tại chỗ, không vẽ lại trang để bàn phím không bị đóng */
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.name; if(!k) return;
@@ -2236,6 +2309,7 @@ document.addEventListener('input',e=>{
   e.target.closest('.prow').classList.toggle('has',!!pname(+k));
   const c=S.n; $('#pcount').textContent=c; $('#cta').disabled=!(c>=9&&c<=15);
   $('#hint').textContent=c<9?'Cần thêm '+(9-c)+' người nữa (tối thiểu 9)':'';
+  sugShow(e.target);
 });
 document.addEventListener('keydown',e=>{
   const k=e.target.dataset&&e.target.dataset.name; if(!k||e.key!=='Enter') return;
