@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Điều khiển overlay · Thị Trấn Đạo Lý</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Be+Vietnam+Pro:wght@500;600;700;800&subset=vietnamese&display=swap">
+<style>
+/* Bảng điều khiển overlay 12 người chơi: nhập tên + ảnh trước buổi live; trong live đánh dấu chết, POV, icon vai. */
+:root{--nv:#0F1A2C;--nv2:#18263D;--nvl:#2C3E5C;--cream:#F8EFB5;--paper:#FEFCF5;--gold:#D4AF37;--gold2:#F2D27A;--red:#D2463C;--red2:#8E241F;--sky:#9CC0E6;--mute:#8FA2C0;--ok:#5FB36B}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:radial-gradient(120% 80% at 0 0,#22365A,var(--nv) 60%) fixed;color:var(--paper);font:600 15px/1.4 'Be Vietnam Pro',system-ui,sans-serif}
+button{font:inherit;cursor:pointer}
+[hidden]{display:none!important}
+.top{position:sticky;top:0;z-index:5;background:rgba(15,26,44,.94);backdrop-filter:blur(8px);border-bottom:1.5px solid rgba(212,175,55,.35)}
+@media(max-width:700px){.top{position:static}}
+.bar{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.bar h1{margin:0 auto 0 0;font:800 22px/1 'Baloo 2';color:var(--gold2);letter-spacing:.02em;padding-top:4px}
+.bar h1 small{display:block;font:700 11px/1.2 'Be Vietnam Pro';letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mute)}
+.st i{width:9px;height:9px;border-radius:50%;background:#8a8a8a}
+.st.on i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.btn{border:1.5px solid rgba(156,192,230,.4);background:rgba(255,255,255,.06);color:var(--paper);border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.12)}
+.btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:var(--nv);border-color:var(--gold)}
+.btn.red{border-color:var(--red);color:#FFB4AC}
+.seg{display:inline-flex;border:1.5px solid rgba(156,192,230,.4);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--mute);padding:8px 12px;font-weight:700;font-size:13px}
+.seg button.on{background:var(--paper);color:var(--nv)}
+main{max-width:1280px;margin:0 auto;padding:16px 16px 60px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.cd{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1.5px solid rgba(156,192,230,.25);border-radius:18px;padding:12px;display:grid;grid-template-columns:84px 1fr;gap:6px 12px;align-items:center;transition:border-color .2s,background .2s}
+.cd.pov{border-color:var(--red);background:linear-gradient(180deg,rgba(210,70,60,.22),rgba(210,70,60,.06))}
+.cd.dead{filter:saturate(.25);opacity:.75}
+.cd{cursor:pointer}
+.cd.spk{border-color:var(--gold2);background:linear-gradient(180deg,rgba(242,210,122,.26),rgba(242,210,122,.08));box-shadow:0 0 0 2px var(--gold2),0 0 22px rgba(242,210,122,.55);filter:none;opacity:1}
+.cd.spk .av{border-color:var(--gold2);box-shadow:0 0 16px rgba(242,210,122,.9)}
+.cd .wrap-av .cam{position:absolute;left:-4px;bottom:-4px;z-index:2;width:26px;height:26px;border-radius:50%;border:2px solid var(--nv);background:var(--paper);color:var(--nv);font-size:13px;line-height:20px;padding:0}
+.spbar{position:sticky;top:var(--hh,0px);z-index:4;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:rgba(15,26,44,.96);border:1.5px solid rgba(242,210,122,.45)}
+.spbar .who{flex:1 1 200px;min-width:0;font:800 18px/1.15 'Baloo 2';color:var(--mute)}
+.spbar .who.on{color:var(--gold2)}
+.spbar small{display:block;font:700 11px/1.2 'Be Vietnam Pro';letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.spbar kbd{font:700 11px 'Be Vietnam Pro';border:1px solid rgba(156,192,230,.4);border-radius:5px;padding:1px 5px;color:var(--sky)}
+@media(max-width:700px){.spbar .keys{display:none}}
+.av{position:relative;grid-row:1/3;width:84px;height:84px;border-radius:50%;border:3px solid var(--paper);background:radial-gradient(circle at 40% 35%,#3A5480,#141F33 75%) center/cover;cursor:pointer;display:grid;place-items:center;color:var(--mute);font-size:11px;font-weight:700;text-align:center;line-height:1.2;overflow:hidden}
+.av.has{color:transparent}
+.av .no{position:absolute;left:-2px;top:-2px;min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:var(--nv);font:800 18px/30px 'Baloo 2';text-align:center;border:2px solid var(--nv)}
+.cd .wrap-av{position:relative;grid-row:1/3}
+.cd .wrap-av .no{position:absolute;left:-6px;top:-6px;z-index:2;min-width:32px;height:32px;padding:0 6px;border-radius:16px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:var(--nv);font:800 19px/33px 'Baloo 2';text-align:center;border:2px solid var(--nv)}
+.cd .wrap-av .rm{position:absolute;right:-4px;bottom:-4px;z-index:2;width:26px;height:26px;border-radius:50%;border:2px solid var(--nv);background:var(--paper);color:var(--nv);font-weight:800;font-size:14px;line-height:20px;padding:0}
+input.nm{width:100%;min-width:0;border:1.5px solid rgba(156,192,230,.35);background:rgba(0,0,0,.25);color:var(--paper);border-radius:10px;padding:8px 10px;font:800 17px/1.1 'Baloo 2';letter-spacing:.03em;text-transform:uppercase;outline:none}
+input.nm:focus{border-color:var(--gold2)}
+.tg{display:flex;gap:6px}
+.tg button{flex:1;border:1.5px solid rgba(156,192,230,.35);background:transparent;color:var(--sky);border-radius:10px;padding:7px 4px;font-weight:800;font-size:13px;letter-spacing:.04em}
+.tg button.on.d{background:#4A4F5C;border-color:#9AA1AC;color:#fff}
+.tg button.on.p{background:var(--red);border-color:#FFB4AC;color:#fff}
+.tg button.on.m{background:linear-gradient(180deg,var(--gold2),var(--gold));border-color:var(--gold);color:var(--nv)}
+.nmrow{display:inline-flex;gap:4px;align-items:center;margin-left:auto}
+.nmrow .fz{flex:none;width:30px;height:28px;border:1.5px solid rgba(156,192,230,.35);background:transparent;color:var(--sky);border-radius:9px;font-weight:800;font-size:13px;padding:0}
+.nmrow .fv{flex:none;min-width:34px;text-align:center;font-size:11px;color:var(--mute)}
+.gfs{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mute)}
+.gfs input{width:110px;accent-color:var(--gold)}
+.cd .wrap-av .tt{position:absolute;right:-8px;top:-8px;z-index:2;width:30px;height:auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+.auto{font-size:12px;color:var(--gold2);margin-left:2px}
+.rl{grid-column:1/3;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.rl .ch{display:inline-flex;align-items:center;gap:4px;padding:3px 9px 3px 3px;border-radius:999px;background:var(--paper);color:var(--nv);font-size:12px;font-weight:800;border:0}
+.rl .ch img{width:24px;height:24px;object-fit:contain;border-radius:50%;background:#fff}
+.rl .add{border:1.5px dashed rgba(156,192,230,.5);background:transparent;color:var(--sky);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800}
+/* hộp chọn vai */
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(5,10,20,.6);display:grid;place-items:end center}
+@media(min-width:700px){.sheet{place-items:center}}
+.pane{width:min(720px,100%);max-height:86vh;overflow:auto;background:var(--nv2);border:1.5px solid var(--gold);border-radius:20px 20px 0 0;padding:16px}
+@media(min-width:700px){.pane{border-radius:20px}}
+.pane h2{margin:0 0 4px;font:800 22px/1.1 'Baloo 2';color:var(--gold2);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pane h3{margin:14px 0 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--sky)}
+.pane h3.soi{color:#FF9C92}
+.icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.icons button{border:2px solid transparent;background:rgba(255,255,255,.05);border-radius:14px;padding:8px 4px;color:var(--paper);font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px}
+.icons button img{width:52px;height:52px;object-fit:contain}
+.icons button.on{border-color:var(--gold2);background:rgba(242,210,122,.16)}
+textarea{width:100%;min-height:210px;border:1.5px solid rgba(156,192,230,.35);background:rgba(0,0,0,.25);color:var(--paper);border-radius:12px;padding:10px;font:700 16px/1.6 'Be Vietnam Pro';outline:none}
+.note{font-size:13px;color:var(--mute);margin:6px 0 0}
+.lk{display:flex;gap:6px;margin-top:8px}.lk input{flex:1;min-width:0;border:1.5px solid rgba(156,192,230,.35);background:rgba(0,0,0,.25);color:var(--paper);border-radius:10px;padding:8px 10px;font:600 13px 'Be Vietnam Pro'}
+/* đăng nhập */
+.gate{max-width:380px;margin:12vh auto;padding:24px;text-align:center;background:var(--nv2);border:1.5px solid var(--gold);border-radius:20px}
+.gate h1{margin:0;font:800 28px/1.1 'Baloo 2';color:var(--gold2)}
+.gate input{width:100%;margin:16px 0 10px;text-align:center;letter-spacing:.4em;font:800 26px 'Baloo 2';border:1.5px solid rgba(156,192,230,.4);background:rgba(0,0,0,.3);color:var(--paper);border-radius:12px;padding:10px}
+/* cắt ảnh */
+.crop{position:fixed;inset:0;z-index:25;background:rgba(5,10,20,.82);display:grid;place-items:center;padding:12px}
+.crop .box{width:min(420px,100%);max-height:100%;overflow:auto;background:var(--nv2);border:1.5px solid var(--gold);border-radius:20px;padding:14px}
+.crop h2{margin:0 0 8px;font:800 20px/1.1 'Baloo 2';color:var(--gold2)}
+.crop canvas{display:block;width:100%;height:auto;touch-action:none;cursor:grab;border-radius:12px;background:#0B1322}
+.crop canvas:active{cursor:grabbing}
+.crop .zrow{display:flex;align-items:center;gap:10px;margin:12px 0 4px;color:var(--mute);font-size:13px}
+.crop .zrow input{flex:1;accent-color:var(--gold)}
+.crop .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.crop .acts .sp{flex:1}
+.choose{display:grid;gap:8px;margin-top:6px}
+.choose .btn{width:100%;padding:12px 14px;font-size:15px}
+/* tab */
+.tabs{display:inline-flex;border:1.5px solid rgba(212,175,55,.6);border-radius:12px;overflow:hidden;margin-right:4px}
+.tabs button{border:0;background:transparent;color:var(--mute);padding:9px 14px;font-weight:800;font-size:14px}
+.tabs button.on{background:linear-gradient(180deg,var(--gold2),var(--gold));color:var(--nv)}
+.vo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px;align-items:start}
+@media(max-width:900px){.vo{grid-template-columns:1fr}}
+.box{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1.5px solid rgba(156,192,230,.25);border-radius:18px;padding:14px}
+.box h2{margin:0 0 10px;font:800 19px/1.1 'Baloo 2';color:var(--gold2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pvw{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#1b1410}
+.pvw iframe{position:absolute;left:0;top:0;width:1920px;height:1080px;border:0;transform-origin:0 0;pointer-events:none}
+.sl{display:grid;grid-template-columns:110px 1fr 64px;align-items:center;gap:10px;margin:10px 0}
+.sl label{font-size:14px;color:var(--sky)}
+.sl input{width:100%;accent-color:var(--gold)}
+.sl b{text-align:right;font-size:14px}
+.acts2{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.rck{display:flex;flex-wrap:wrap;gap:8px}
+.rck label{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;border:1.5px solid rgba(156,192,230,.35);background:rgba(255,255,255,.04);font-size:13px;cursor:pointer;user-select:none}
+.rck label.on{border-color:var(--gold2);background:rgba(242,210,122,.18)}
+.rck label.soi{color:#FFC2BA}
+.rck img{width:26px;height:26px;border-radius:50%;object-fit:cover;background:#fff}
+.rck input{display:none}
+.rck .ord{min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:var(--nv);font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 4px}
+details.more summary{cursor:pointer;color:var(--sky);font-size:13px;margin:12px 0 8px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--paper);color:var(--nv);font-weight:800;padding:10px 16px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:30}
+</style></head>
+<body>
+<section class="gate" id="gate" hidden>
+  <h1>Điều khiển overlay</h1><p class="note">Nhập mã PIN của phòng <b id="groom"></b>. Lần đầu dùng: mã bạn nhập sẽ thành mã PIN của phòng (ít nhất 4 ký tự).</p>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
+  <button class="btn gold" id="go" style="width:100%">Vào bảng điều khiển</button><p class="note" id="gerr"></p>
+</section>
+<div id="app" hidden>
+  <header class="top"><div class="bar">
+    <h1><small>Thị Trấn Đạo Lý · phòng <span id="room"></span></small>Điều khiển overlay</h1>
+    <span class="st" id="st"><i></i><span>Đang kết nối</span></span>
+    <span class="tabs"><button data-a="tab" data-v="pl">12 người chơi</button><button data-a="tab" data-v="vo">Khung kiểm phiếu</button></span>
+    <span class="pl-only" style="display:contents">
+    <button class="btn" data-a="names">Nhập tên</button>
+    <button class="btn" data-a="bulk">Nhập nhiều ảnh</button>
+    <label class="gfs" title="Cỡ chữ tên, áp dụng cho cả 12 người">Cỡ chữ <input type="range" id="gfs" min="70" max="150" step="5"><b id="gfsv">100%</b></label>
+    <span class="seg" title="Kiểu đánh dấu người chết"><button data-a="dmode" data-v="gray">Chết: xám</button><button data-a="dmode" data-v="x">Chết: dấu X</button></span>
+    <button class="btn" data-a="hide" id="hidebtn">Ẩn overlay</button>
+    <span class="seg" id="sumpg" title="Trang tổng kết"><button data-a="sump" data-v="bai">Bài từng số</button><button data-a="sump" data-v="tl">Diễn biến</button></span>
+    <button class="btn" data-a="sum" id="sumbtn" title="Bảng tổng kết ván từ web quản trò, hiện giữa màn hình">Tổng kết ván</button>
+    <button class="btn gold" data-a="newgame">Ván mới</button>
+    </span>
+    <button class="btn" data-a="obs">Link OBS</button>
+  </div></header>
+  <main><section id="tab-vo" hidden><div class="vo">
+    <div class="box"><h2>Xem trước trên stream<button class="btn" data-a="vohide" id="vohide">Ẩn toàn bộ khung</button></h2>
+      <div class="pvw" id="pvw"><iframe id="pvf" title="Xem trước khung kiểm phiếu"></iframe></div>
+      <p class="note">Khung xem trước giống hệt trên OBS (nền tối thay cho camera). Kéo thanh trượt là khung trên stream đổi ngay.</p></div>
+    <div class="box"><h2>Vị trí và cỡ</h2>
+      <div class="sl"><label for="v-sc">Cỡ khung</label><input type="range" id="v-sc" data-vo="sc" min="50" max="160" step="1"><b id="v-sc-v"></b></div>
+      <div class="sl"><label for="v-x">Ngang</label><input type="range" id="v-x" data-vo="x" min="-700" max="700" step="2"><b id="v-x-v"></b></div>
+      <div class="sl"><label for="v-y">Dọc (cách đáy)</label><input type="range" id="v-y" data-vo="y" min="0" max="700" step="2"><b id="v-y-v"></b></div>
+      <div class="sl"><label for="v-ih">Cao khung idle</label><input type="range" id="v-ih" data-vo="ih" min="150" max="300" step="2"><b id="v-ih-v"></b></div>
+      <div class="acts2"><button class="btn" data-a="vodef">Về mặc định</button></div>
+      <p class="note">Cỡ khung phóng to/thu nhỏ cả khung lẫn chữ bên trong. Dọc tính từ cạnh dưới màn hình.</p></div>
+    <div class="box" style="grid-column:1/-1"><h2>Vai cần giải thích <button class="btn" data-a="spdef" id="spdef">Theo web quản trò</button></h2>
+      <div id="sproles"></div></div>
+  </div></section>
+  <section id="tab-pl"><div class="spbar" id="spbar"></div><div class="grid" id="grid"></div>
+    <p class="note" style="margin-top:16px"><b>Bấm vào khung (hoặc ảnh) của người đang nói</b>: khung đó sáng vàng trên stream, bấm người khác là chuyển, bấm lại là tắt. Nút 📷 để đổi ảnh. <b>Chết</b> làm xám khung (hoặc dấu X), <b>POV</b> đổi sang khung đỏ để khán giả theo dõi đêm của người đó (bật được nhiều POV), <b>TT</b> gắn cúp Thị trưởng. <b>A− / A+</b> chỉnh cỡ chữ tên từng người. Mọi thay đổi lên stream ngay.</p>
+    <p class="note">Bật <b>Tự cập nhật</b> trong web quản trò (Menu › Overlay OBS) thì người chết và Thị trưởng tự đổi theo ván, không cần bấm ở đây.</p>
+    <p class="note"><button class="btn red" data-a="wipe">Xóa hết tên và ảnh</button></p></section></main>
+</div>
+<div id="sheet"></div><div id="crop"></div>
+<input type="file" id="file" accept="image/*" hidden><input type="file" id="files" accept="image/*" multiple hidden>
+<script>
+const Q=new URLSearchParams(location.search), ROOM=(Q.get('room')||'TTDL').toUpperCase();
+const BASE=location.protocol==='file:'?'https://quantro.hoisoidaoly.workers.dev':'';
+const $=s=>document.querySelector(s), esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const LS={get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }};
+let PIN=LS.get('qtdl_pin_'+ROOM)||'', ROLES=[], RM={};
+let S={players:Array.from({length:12},()=>({name:'',dead:0,pov:0,roles:[],fs:100})),set:{dead:'gray',hide:0,fs:100},vo:{sc:100,x:0,y:72,ih:200,hide:0,sp:null},mayor:null,speak:null}, AV={};
+let saveT=null, picking=null, editing=null, SUM=null, GAME=null, TAB=LS.get('qtdl_tab')==='vo'?'vo':'pl';
+const VODEF={sc:100,x:0,y:72,ih:200,hide:0,sp:null};
+$('#room').textContent=ROOM; $('#groom').textContent=ROOM;
+function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),1800); }
+async function api(path,body){ const r=await fetch(BASE+'/api/stage/'+ROOM+path,{method:'POST',headers:{'content-type':'application/json','x-key':PIN},body:JSON.stringify(body)});
+  if(r.status===403) throw new Error('Sai mã PIN'); if(!r.ok) throw new Error('Lỗi '+r.status); return r.json(); }
+/* ---------- vào phòng ---------- */
+async function login(p){ PIN=p; try{ await api('',{op:'auth'}); LS.set('qtdl_pin_'+ROOM,p); start(); }catch(e){ $('#gate').hidden=false; $('#app').hidden=true; $('#gerr').textContent=e.message; } }
+$('#go').onclick=()=>{ const p=$('#pin').value.trim(); if(p.length<4){ $('#gerr').textContent='Mã PIN cần ít nhất 4 ký tự'; return; } login(p); };
+$('#pin').onkeydown=e=>{ if(e.key==='Enter') $('#go').click(); };
+async function start(){ $('#gate').hidden=true; $('#app').hidden=false;
+  try{ ROLES=await (await fetch(BASE+'/roles/roles.json')).json(); ROLES.forEach(r=>RM[r.id]=r); }catch(e){}
+  try{ const f=await (await fetch(BASE+'/api/stage/'+ROOM)).json(); if(f.state) S=norm(f.state); AV=f.avatars||{}; SUM=f.summary||null; GAME=f.game||null; }catch(e){}
+  render(); connect(); }
+function norm(s){ s.players=Array.from({length:12},(_,i)=>Object.assign({name:'',dead:0,pov:0,roles:[],fs:100},(s.players||[])[i]||{})); s.set=Object.assign({dead:'gray',hide:0,fs:100},s.set||{}); delete s.set.lay; s.vo=Object.assign({},VODEF,s.vo||{}); if(s.mayor===undefined) s.mayor=null; if(s.speak===undefined||(s.speak&&s.players[s.speak-1].dead)) s.speak=null; return s; }
+/* ---------- lưu ---------- */
+let lastLocal=0;
+function save(now){ lastLocal=Date.now(); clearTimeout(saveT); saveT=setTimeout(async()=>{ saveT=null; try{ await api('',{state:S}); }catch(e){ toast(e.message); } },now?0:280); }
+/* ---------- giao diện ---------- */
+function card(p,i){ const n=i+1, u=AV[n];
+  return `<div class="cd ${p.dead?'dead':''} ${p.pov?'pov':''} ${S.speak===n?'spk':''}" data-a="speak" data-i="${i}">
+    <div class="wrap-av"><span class="no">${n}</span>${S.mayor===n?`<img class="tt" src="${BASE}/assets/thi-truong.webp" alt="Thị trưởng">`:''}<div class="av ${u?'has':''}" data-a="speak" data-i="${i}" style="${u?`background-image:url('${u}')`:''}" title="Bấm: đang phát biểu">${u?'':'Chưa<br>có ảnh'}</div><button class="cam" data-a="pick" data-i="${i}" title="Chọn ảnh">📷</button>${u?`<button class="rm" data-a="rmav" data-i="${i}" title="Xóa ảnh">×</button>`:''}</div>
+    <input class="nm" data-i="${i}" value="${esc(p.name)}" placeholder="Tên số ${n}" maxlength="22">
+    <div class="tg"><button class="d ${p.dead?'on':''}" data-a="dead" data-i="${i}">${p.dead?'ĐÃ CHẾT':'CHẾT'}</button><button class="p ${p.pov?'on':''}" data-a="pov" data-i="${i}">POV</button><button class="m ${S.mayor===n?'on':''}" data-a="mayor" data-i="${i}" title="Thị trưởng">TT</button></div>
+    <div class="rl">${(p.roles||[]).filter(r=>RM[r]).map(r=>`<button class="ch" data-a="roles" data-i="${i}"><img src="${BASE}/roles/${RM[r].f}" alt="">${esc(RM[r].n)}</button>`).join('')}<button class="add" data-a="roles" data-i="${i}">+ Icon vai</button><span class="nmrow" title="Cỡ chữ tên trên stream"><button class="fz" data-a="fs" data-v="-10" data-i="${i}">A−</button><span class="fv">${p.fs||100}%</span><button class="fz" data-a="fs" data-v="10" data-i="${i}">A+</button></span></div></div>`; }
+function spbar(){ const n=S.speak, p=n?S.players[n-1]:null;
+  $('#spbar').innerHTML=`<div class="who ${n?'on':''}"><small>Đang phát biểu</small>${n?`Số ${n}${p.name?' · '+esc(p.name):''}`:'Chưa ai · bấm vào khung người nói'}</div>
+    <button class="btn" data-a="spnext" data-v="-1" title="Người trước (←)">◀</button><button class="btn gold" data-a="spnext" data-v="1" title="Người kế tiếp (→)">Người kế ▶</button><button class="btn" data-a="spoff" ${n?'':'disabled'}>Tắt</button>
+    <span class="note keys" style="margin:0"><kbd>←</kbd> <kbd>→</kbd> đổi người · <kbd>Esc</kbd> tắt</span>`; }
+function setSpeak(n){ if(n&&S.players[n-1].dead){ toast('Số '+n+' đã chết, không phát biểu'); return; } S.speak=n||null; render(); save(1); }
+/* người kế tiếp: bỏ qua ghế đã chết và ghế trống */
+function stepSpeak(d){ const ok=k=>!S.players[k-1].dead&&(S.players[k-1].name||AV[k]); let n=S.speak||(d>0?0:13);
+  for(let t=0;t<12;t++){ n=((n-1+d+12)%12)+1; if(ok(n)) return setSpeak(n); } }
+function render(){ spbar(); const g=$('#grid'), f=document.activeElement, fi=f&&f.classList.contains('nm')?+f.dataset.i:null, pos=fi!=null?f.selectionStart:0;
+  g.innerHTML=S.players.map(card).join('');
+  if(fi!=null){ const el=g.querySelector(`input.nm[data-i="${fi}"]`); if(el){ el.focus(); try{ el.setSelectionRange(pos,pos); }catch(e){} } }
+  document.querySelectorAll('[data-a="dmode"]').forEach(b=>b.classList.toggle('on',b.dataset.v===(S.set.dead||'gray')));
+  if(document.activeElement!==$('#gfs')) $('#gfs').value=S.set.fs||100; $('#gfsv').textContent=(S.set.fs||100)+'%';
+  $('#hidebtn').textContent=S.set.hide?'Hiện overlay':'Ẩn overlay'; $('#hidebtn').classList.toggle('gold',!!S.set.hide);
+  const sb=$('#sumbtn'); sb.disabled=!SUM; sb.style.opacity=SUM?1:.45; sb.classList.toggle('gold',!!(SUM&&S.set.sum));
+  $('#sumpg').hidden=!SUM; document.querySelectorAll('[data-a="sump"]').forEach(x=>x.classList.toggle('on',x.dataset.v===(S.set.sump==='tl'?'tl':'bai')));
+  sb.textContent=!SUM?'Tổng kết: chưa có':S.set.sum?'Ẩn tổng kết ván':'Hiện tổng kết ván';
+  sb.title=SUM?('Ván lúc '+(SUM.when||'')+' · '+(SUM.win&&SUM.win.name||'')):'Kết thúc ván trên web quản trò (đã bật Overlay OBS) để có bảng tổng kết';
+  renderVO(); renderSheet(); }
+function renderSheet(){ const sh=$('#sheet'); if(!picking){ sh.innerHTML=''; return; }
+  if(picking.k==='roles'){ const i=picking.i, p=S.players[i], grp=t=>ROLES.filter(r=>r.t===t).map(r=>`<button class="${(p.roles||[]).includes(r.id)?'on':''}" data-a="trole" data-v="${r.id}"><img src="${BASE}/roles/${r.f}" alt="">${esc(r.n)}</button>`).join('');
+    sh.innerHTML=`<div class="sheet" data-a="close"><div class="pane" data-stop="1"><h2>Icon vai · số ${i+1}${p.name?' · '+esc(p.name):''}<button class="btn gold" data-a="close">Xong</button></h2>
+      <p class="note">Chạm để bật hoặc tắt. Icon hiện ở góc trên, phía ngoài khung trên stream. Gắn được nhiều icon.</p>
+      <h3>Phe Tốt</h3><div class="icons">${grp('tot')}</div><h3 class="soi">Phe Sói</h3><div class="icons">${grp('soi')}</div>
+      <p class="note"><button class="btn red" data-a="clrroles">Bỏ hết icon của số ${i+1}</button></p></div></div>`; }
+  else if(picking.k==='names'){ sh.innerHTML=`<div class="sheet" data-a="close"><div class="pane" data-stop="1"><h2>Nhập tên 12 người<button class="btn gold" data-a="savenames">Lưu</button></h2>
+      <p class="note">Mỗi dòng một tên, theo thứ tự số 1 đến 12. Dòng trống thì giữ ô đó trống.</p>
+      <textarea id="ta">${S.players.map(p=>esc(p.name)).join('\n')}</textarea></div></div>`; }
+  else if(picking.k==='photo'){ const i=picking.i, n=i+1;
+    sh.innerHTML=`<div class="sheet" data-a="close"><div class="pane" data-stop="1" style="max-width:420px"><h2>Ảnh số ${n}${S.players[i].name?' · '+esc(S.players[i].name):''}<button class="btn" data-a="close">Đóng</button></h2>
+      <div class="choose"><button class="btn gold" data-a="newpic" data-i="${i}">📷 Chọn ảnh mới</button><button class="btn" data-a="editpic" data-i="${i}">✂ Chỉnh ảnh hiện tại (zoom, dời, xoay)</button><button class="btn red" data-a="rmav" data-i="${i}">Xóa ảnh</button></div></div></div>`; }
+  else if(picking.k==='obs'){ const O=BASE||location.origin, u=O+'/overlay-nguoi-choi?room='+ROOM, u2=O+'/overlay?room='+ROOM;
+    sh.innerHTML=`<div class="sheet" data-a="close"><div class="pane" data-stop="1"><h2>Link cho OBS<button class="btn gold" data-a="close">Xong</button></h2>
+      <p class="note">OBS › Sources › + › Browser. Dán link, Width 1920, Height 1080, bỏ chọn "Shutdown source when not visible".</p>
+      <h3>12 người chơi</h3><div class="lk"><input readonly value="${esc(u)}" onfocus="this.select()"><button class="btn gold" data-a="copy" data-v="${esc(u)}">Sao chép</button></div>
+      <h3>Kiểm phiếu</h3><div class="lk"><input readonly value="${esc(u2)}" onfocus="this.select()"><button class="btn gold" data-a="copy" data-v="${esc(u2)}">Sao chép</button></div>
+      <p class="note">Web quản trò › Menu › Overlay OBS: nhập mã phòng <b>${ROOM}</b> và cùng mã PIN này. Một mã cho cả hai overlay.</p>
+      <p class="note">Vị trí, cỡ khung kiểm phiếu: chỉnh ở tab <b>Khung kiểm phiếu</b>.</p>
+      <p class="note">Khung 12 người: thêm <b>&amp;fw=188</b> (bề rộng khung), <b>&amp;gap=179</b> (khoảng cách dọc), <b>&amp;x=6</b> (lề ngang), <b>&amp;y=4</b> (lề trên).</p></div></div>`; }
+}
+/* ---------- ảnh: lưu ảnh gốc (≤1000px) + vị trí cắt; stream dùng bản vuông 320px ---------- */
+const loadImg=src=>new Promise((ok,no)=>{ const im=new Image(); im.onload=()=>ok(im); im.onerror=()=>no(new Error('Không đọc được ảnh')); im.src=src; });
+const toData=(c,q)=>{ let d=c.toDataURL('image/webp',q); if(!d.startsWith('data:image/webp')) d=c.toDataURL('image/jpeg',q); return d; };
+async function readSrc(file){ const u=URL.createObjectURL(file); try{ const im=await loadImg(u); const k=Math.min(1,1000/Math.max(im.width,im.height)), c=document.createElement('canvas');
+  c.width=Math.round(im.width*k); c.height=Math.round(im.height*k); c.getContext('2d').drawImage(im,0,0,c.width,c.height); return toData(c,.86); } finally{ URL.revokeObjectURL(u); } }
+/* vị trí mặc định: giữa ngang, hơi lệch lên (ảnh người thường có mặt ở phía trên) */
+const defCrop=im=>{ const m=Math.min(im.width,im.height); return {x:.5,y:((im.height-m)/2*.6+m/2)/im.height,s:1}; };
+/* crop: x,y = tâm vòng tròn (tỉ lệ theo ảnh), s = đường kính vòng / cạnh ngắn của ảnh (nhỏ hơn 1 là phóng to) */
+function drawCrop(ctx,im,cr,size){ const m=Math.min(im.width,im.height), side=cr.s*m, k=size/side;
+  ctx.fillStyle='#1A2740'; ctx.fillRect(0,0,size,size);
+  ctx.drawImage(im,size/2-cr.x*im.width*k,size/2-cr.y*im.height*k,im.width*k,im.height*k); }
+async function renderAv(src,cr){ const im=await loadImg(src), c=document.createElement('canvas'); c.width=c.height=320; drawCrop(c.getContext('2d'),im,cr,320); return toData(c,.86); }
+async function saveAv(i,url,extra){ AV[i+1]=url; render(); await api('/avatar/'+(i+1),Object.assign({url},extra)); }
+async function setAvatar(i,file,quiet){ try{ const src=await readSrc(file), im=await loadImg(src), cr=defCrop(im);
+  await saveAv(i,await renderAv(src,cr),{src,crop:cr}); if(!quiet) toast('Đã cập nhật ảnh số '+(i+1)); }catch(e){ toast(e.message); } }
+/* ---------- màn cắt ảnh ---------- */
+let CR=null;
+async function openCrop(i,src,cr,isNew){ let im; try{ im=await loadImg(src); }catch(e){ toast(e.message); return; }
+  const n=i+1, fr=await loadImg(BASE+'/frames/'+(S.players[i].pov?'p':'a')+String(n).padStart(2,'0')+'.webp').catch(()=>null);
+  CR={i,src,im,fr,cr:Object.assign(defCrop(im),cr||{}),isNew,rot:0};
+  $('#crop').innerHTML=`<div class="crop"><div class="box"><h2>Cắt ảnh số ${n}${S.players[i].name?' · '+esc(S.players[i].name):''}</h2>
+    <p class="note" style="margin:0 0 8px">Kéo ảnh để dời · lăn chuột hoặc chụm 2 ngón để phóng to/thu nhỏ.</p>
+    <canvas id="cc" width="680" height="664"></canvas>
+    <div class="zrow"><span>−</span><input type="range" id="cz" min="0" max="100" step="1" aria-label="Phóng to"><span>+</span></div>
+    <div class="acts"><button class="btn" data-c="rot">⟳ Xoay</button><button class="btn" data-c="center">Về giữa</button><span class="sp"></span><button class="btn" data-c="cancel">Hủy</button><button class="btn gold" data-c="ok">Xong</button></div></div></div>`;
+  bindCrop(); drawC(); }
+const ZMIN=.35, ZMAX=1.6; /* s từ 1.6 (thu nhỏ, có viền) tới .35 (phóng gần 3 lần) */
+const s2z=sv=>Math.round(100*Math.log(ZMAX/sv)/Math.log(ZMAX/ZMIN)), z2s=z=>ZMAX*Math.pow(ZMIN/ZMAX,z/100);
+function drawC(){ const c=$('#cc'); if(!c||!CR) return; const ctx=c.getContext('2d'), W=c.width, H=c.height;
+  const cx=W*.5187, cy=H*.4065, R=W*.2566, im=CR.im, cr=CR.cr, m=Math.min(im.width,im.height), k=2*R/(cr.s*m);
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#0B1322'; ctx.fillRect(0,0,W,H);
+  const dx=cx-cr.x*im.width*k, dy=cy-cr.y*im.height*k;
+  ctx.globalAlpha=.32; ctx.drawImage(im,dx,dy,im.width*k,im.height*k); ctx.globalAlpha=1;
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.clip(); ctx.fillStyle='#1A2740'; ctx.fillRect(0,0,W,H); ctx.drawImage(im,dx,dy,im.width*k,im.height*k); ctx.restore();
+  if(CR.fr) ctx.drawImage(CR.fr,0,0,W,H);
+  const z=$('#cz'); if(z&&document.activeElement!==z) z.value=s2z(cr.s); }
+function bindCrop(){ const c=$('#cc'), pts=new Map(); let last=null;
+  const scale=()=>{ const W=c.width, R=W*.2566, m=Math.min(CR.im.width,CR.im.height); return (2*R/(CR.cr.s*m))*(c.clientWidth/W); }; /* px màn hình trên 1 px ảnh */
+  const zoomTo=(sv)=>{ CR.cr.s=Math.min(ZMAX,Math.max(ZMIN,sv)); drawC(); };
+  c.onpointerdown=e=>{ c.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); last=null; };
+  c.onpointermove=e=>{ if(!pts.has(e.pointerId)) return; const p0=pts.get(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){ const k=scale(); CR.cr.x-=(e.clientX-p0.x)/k/CR.im.width; CR.cr.y-=(e.clientY-p0.y)/k/CR.im.height; drawC(); }
+    else if(pts.size===2){ const [a,b]=[...pts.values()], d=Math.hypot(a.x-b.x,a.y-b.y); if(last) zoomTo(CR.cr.s*last/d); last=d; } };
+  c.onpointerup=c.onpointercancel=e=>{ pts.delete(e.pointerId); last=null; };
+  c.onwheel=e=>{ e.preventDefault(); zoomTo(CR.cr.s*Math.exp(e.deltaY*.0015)); };
+  $('#cz').oninput=e=>zoomTo(z2s(+e.target.value)); }
+async function rotateSrc(){ const im=CR.im, c=document.createElement('canvas'); c.width=im.height; c.height=im.width; const x=c.getContext('2d');
+  x.translate(c.width,0); x.rotate(Math.PI/2); x.drawImage(im,0,0); CR.src=toData(c,.86); CR.im=await loadImg(CR.src); CR.cr=defCrop(CR.im); CR.rotated=1; drawC(); }
+document.addEventListener('click',async e=>{ const b=e.target.closest('[data-c]'); if(!b||!CR) return; const a=b.dataset.c;
+  if(a==='rot') rotateSrc();
+  else if(a==='center'){ CR.cr=defCrop(CR.im); drawC(); }
+  else if(a==='cancel'){ CR=null; $('#crop').innerHTML=''; }
+  else if(a==='ok'){ const c=CR; CR=null; $('#crop').innerHTML=''; try{ const url=await renderAv(c.src,c.cr);
+      await saveAv(c.i,url,c.isNew||c.rotated?{src:c.src,crop:c.cr}:{crop:c.cr,keepSrc:1}); toast('Đã cập nhật ảnh số '+(c.i+1)); }catch(er){ toast(er.message); } } });
+document.addEventListener('keydown',e=>{ if(CR&&e.key==='Escape'){ CR=null; $('#crop').innerHTML=''; } },true);
+async function editPic(i){ let src=null, cr=null;
+  try{ const r=await (await fetch(BASE+'/api/stage/'+ROOM+'/source/'+(i+1))).json(); if(r&&r.src){ src=r.src; cr=r.crop; } }catch(e){}
+  if(!src){ if(!AV[i+1]){ toast('Chưa có ảnh'); return; } src=AV[i+1]; cr={x:.5,y:.5,s:1}; return openCrop(i,src,cr,true); } /* ảnh cũ chưa lưu bản gốc */
+  openCrop(i,src,cr,false); }
+$('#file').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f||editing==null) return; try{ const src=await readSrc(f); openCrop(editing,src,null,true); }catch(er){ toast(er.message); } };
+$('#files').onchange=async e=>{ const fs=[...e.target.files]; e.target.value=''; const used=new Set(); const free=()=>S.players.findIndex((_,i)=>!AV[i+1]&&!used.has(i)); let k=0;
+  for(const f of fs){ const m=f.name.match(/^0?(\d{1,2})\D/); let i=m&&+m[1]>=1&&+m[1]<=12?+m[1]-1:free(); if(i<0||i==null) continue; used.add(i); await setAvatar(i,f,1); k++; }
+  if(k) toast('Đã thêm '+k+' ảnh · bấm 📷 ở từng người để chỉnh'); };
+document.addEventListener('input',e=>{ if(e.target.id==='gfs'){ S.set.fs=+e.target.value; $('#gfsv').textContent=S.set.fs+'%'; save(); return; }
+  if(e.target.matches('input.nm')){ S.players[+e.target.dataset.i].name=e.target.value; save(); } });
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-a]'); if(!b) return; const a=b.dataset.a, i=b.dataset.i!=null?+b.dataset.i:null;
+  if(a==='close'&&e.target.closest('[data-stop]')&&!e.target.closest('button')) return;
+  if(a==='speak'){ if(e.target.closest('input,textarea')) return; setSpeak(S.speak===i+1?null:i+1); return; }
+  if(a==='spnext'){ stepSpeak(+b.dataset.v); return; }
+  if(a==='spoff'){ setSpeak(null); return; }
+  if(a==='pick'){ editing=i; if(AV[i+1]){ picking={k:'photo',i}; renderSheet(); } else $('#file').click(); return; }
+  if(a==='newpic'){ editing=i; picking=null; renderSheet(); $('#file').click(); return; }
+  if(a==='editpic'){ picking=null; renderSheet(); editPic(i); return; }
+  if(a==='rmav'){ if(picking&&picking.k==='photo'){ picking=null; renderSheet(); } delete AV[i+1]; render(); api('/avatar/'+(i+1),{url:null}).catch(er=>toast(er.message)); return; }
+  if(a==='dead'){ S.players[i].dead=S.players[i].dead?0:1; if(S.players[i].dead&&S.speak===i+1) S.speak=null; render(); save(1); return; }
+  if(a==='mayor'){ S.mayor=S.mayor===i+1?null:i+1; render(); save(1); return; }
+  if(a==='fs'){ const p=S.players[i]; p.fs=Math.max(60,Math.min(160,(p.fs||100)+(+b.dataset.v))); render(); save(); return; }
+  if(a==='pov'){ S.players[i].pov=S.players[i].pov?0:1; render(); save(1); return; }
+  if(a==='roles'){ picking={k:'roles',i}; renderSheet(); return; }
+  if(a==='trole'){ const p=S.players[picking.i], v=b.dataset.v; p.roles=p.roles||[]; p.roles=p.roles.includes(v)?p.roles.filter(x=>x!==v):[...p.roles,v]; render(); save(1); return; }
+  if(a==='clrroles'){ S.players[picking.i].roles=[]; render(); save(1); return; }
+  if(a==='close'){ picking=null; renderSheet(); return; }
+  if(a==='names'){ picking={k:'names'}; renderSheet(); setTimeout(()=>$('#ta')&&$('#ta').focus(),50); return; }
+  if(a==='savenames'){ const L=$('#ta').value.split('\n'); S.players.forEach((p,k)=>p.name=(L[k]||'').trim().slice(0,22)); picking=null; render(); save(1); toast('Đã lưu tên'); return; }
+  if(a==='bulk'){ $('#files').click(); return; }
+  if(a==='dmode'){ S.set.dead=b.dataset.v; render(); save(1); return; }
+  if(a==='sump'){ S.set.sump=b.dataset.v; render(); save(1); return; }
+  if(a==='sum'){ if(!SUM) return; S.set.sum=S.set.sum?0:1; render(); save(1); return; }
+  if(a==='hide'){ S.set.hide=S.set.hide?0:1; render(); save(1); return; }
+  if(a==='newgame'){ if(!b.dataset.sure){ b.dataset.sure=1; b.textContent='Chạm lần nữa để xác nhận'; setTimeout(()=>{ delete b.dataset.sure; b.textContent='Ván mới'; },3000); return; }
+    S.players.forEach(p=>{ p.dead=0; p.pov=0; p.roles=[]; }); S.mayor=null; S.speak=null; S.cand=[]; S.set.sum=0; delete b.dataset.sure; render(); save(1); toast('Ván mới: đã bỏ dấu chết, POV và icon vai'); return; }
+  if(a==='wipe'){ if(!b.dataset.sure){ b.dataset.sure=1; b.textContent='Chạm lần nữa để xóa hết'; setTimeout(()=>{ delete b.dataset.sure; b.textContent='Xóa hết tên và ảnh'; },3000); return; }
+    S.players=S.players.map(()=>({name:'',dead:0,pov:0,roles:[],fs:100})); S.mayor=null; S.speak=null; const old=Object.keys(AV); AV={}; render(); save(1); old.forEach(n=>api('/avatar/'+n,{url:null}).catch(()=>{})); toast('Đã xóa hết'); return; }
+  if(a==='obs'){ picking={k:'obs'}; renderSheet(); return; }
+  if(a==='tab'){ TAB=b.dataset.v; LS.set('qtdl_tab',TAB); render(); return; }
+  if(a==='vohide'){ voSet({hide:S.vo.hide?0:1},1); return; }
+  if(a==='vodef'){ voSet({sc:VODEF.sc,x:VODEF.x,y:VODEF.y,ih:VODEF.ih},1); return; }
+  if(a==='spdef'){ voSet({sp:null},1); return; }
+  if(a==='copy'){ const v=b.dataset.v; (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('Đã sao chép link'),()=>toast('Nhấn giữ ô link để sao chép')); return; }
+});
+document.addEventListener('keydown',e=>{ if($('#app').hidden||TAB!=='pl'||picking||CR||e.target.closest('input,textarea')||e.metaKey||e.ctrlKey||e.altKey) return;
+  if(e.key==='ArrowRight'){ e.preventDefault(); stepSpeak(1); } else if(e.key==='ArrowLeft'){ e.preventDefault(); stepSpeak(-1); } else if(e.key==='Escape'&&S.speak){ setSpeak(null); } });
+
+/* ---------- tab Khung kiểm phiếu ---------- */
+const spKey=()=>GAME&&GAME.roles?GAME.set+'|'+GAME.n:null;
+function spIds(){ const k=spKey(); if(!k) return []; const v=S.vo.sp; return v&&v.key===k&&Array.isArray(v.ids)?v.ids:(GAME.special||[]); }
+function pvPush(){ const f=$('#pvf'); try{ f&&f.contentWindow&&f.contentWindow.postMessage({qtdlVO:S.vo},'*'); }catch(e){} }
+function pvSize(){ const w=$('#pvw'), f=$('#pvf'); if(w&&f) f.style.transform='scale('+(w.clientWidth/1920)+')'; }
+function renderVO(){
+  document.querySelectorAll('[data-a="tab"]').forEach(b=>b.classList.toggle('on',b.dataset.v===TAB));
+  $('#tab-vo').hidden=TAB!=='vo'; $('#tab-pl').hidden=TAB!=='pl'; document.querySelectorAll('.pl-only').forEach(e=>e.hidden=TAB!=='pl');
+  if(TAB!=='vo') return;
+  const f=$('#pvf'); if(f&&!f.src){ f.src=(BASE||'')+'/overlay?room='+ROOM+'&preview=1'; f.onload=pvPush; } pvSize();
+  const V=S.vo, unit={sc:'%',x:' px',y:' px',ih:' px'};
+  ['sc','x','y','ih'].forEach(k=>{ const el=$('#v-'+k); if(document.activeElement!==el) el.value=V[k]; $('#v-'+k+'-v').textContent=V[k]+unit[k]; });
+  const hb=$('#vohide'); hb.textContent=V.hide?'Hiện lại khung':'Ẩn toàn bộ khung'; hb.classList.toggle('gold',!!V.hide);
+  const box=$('#sproles');
+  if(!GAME||!GAME.roles||GAME.prep){ box.innerHTML='<p class="note">Chưa có ván từ web quản trò. Xác nhận ván trên web quản trò (Overlay OBS đang Bật, đúng mã PIN) thì danh sách vai hiện ở đây.</p>'; $('#spdef').hidden=true; return; }
+  const ids=spIds(), custom=!!(S.vo.sp&&S.vo.sp.key===spKey());
+  const inGame=[...(GAME.good||[]),...(GAME.wolf||[])].map(r=>r.id).filter(id=>GAME.roles[id]);
+  const other=Object.keys(GAME.roles).filter(id=>!inGame.includes(id));
+  const lab=id=>{ const r=GAME.roles[id], k=ids.indexOf(id), img=RM[id]?`<img src="${BASE}/roles/${RM[id].f}" alt="">`:'';
+    return `<label class="${k>=0?'on':''} ${r.t==='soi'?'soi':''}" title="${esc(r.d)}"><input type="checkbox" data-sp="${id}" ${k>=0?'checked':''}>${img}${esc(r.n)}${k>=0?`<span class="ord">${k+1}</span>`:''}</label>`; };
+  $('#spdef').hidden=!custom;
+  box.innerHTML=`<p class="note" style="margin:0 0 10px">Tích vai nào thì thẻ "Vai đặc biệt" giải thích lần lượt các vai đó theo thứ tự tích (mỗi vòng xoay 1 vai). ${custom?'Đang dùng lựa chọn của bạn.':'Đang dùng mặc định của web quản trò.'} Không tích vai nào thì bỏ thẻ này.</p>
+    <h3 style="margin:0 0 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--sky)">Vai trong ván · ${esc(GAME.set||'')}</h3><div class="rck">${inGame.map(lab).join('')}</div>
+    <details class="more" ${other.some(id=>ids.includes(id))?'open':''}><summary>Thêm vai khác (không có trong ván)</summary><div class="rck">${other.map(lab).join('')}</div></details>`; }
+function voSet(patch,now){ S.vo=Object.assign({},S.vo,patch); pvPush(); renderVO(); save(now); }
+addEventListener('resize',pvSize);
+document.addEventListener('input',e=>{ const k=e.target.dataset&&e.target.dataset.vo; if(!k) return; voSet({[k]:+e.target.value}); });
+document.addEventListener('change',e=>{ const id=e.target.dataset&&e.target.dataset.sp; if(!id) return; let ids=[...spIds()];
+  ids=e.target.checked?(ids.includes(id)?ids:[...ids,id]):ids.filter(x=>x!==id); voSet({sp:{key:spKey(),ids}},1); });
+/* ---------- đồng bộ với các máy điều khiển khác ---------- */
+let ws=null, tries=0, pingT=null;
+function setSt(on){ $('#st').classList.toggle('on',on); $('#st span').textContent=on?'Đã kết nối':'Mất kết nối, đang thử lại'; }
+function connect(){ const base=(BASE||location.origin).replace(/^http/,'ws');
+  ws=new WebSocket(base+'/api/stage/'+ROOM+'/ws');
+  ws.onopen=()=>{ tries=0; setSt(true); clearInterval(pingT); pingT=setInterval(()=>{ try{ ws.send('ping'); }catch(e){} },25000); };
+  ws.onmessage=e=>{ if(e.data==='pong') return; let m; try{ m=JSON.parse(e.data); }catch(er){ return; }
+    if(m.type==='state'){ if(!saveT&&Date.now()-lastLocal>1500){ S=norm(m.state); render(); } } /* vừa sửa trên máy này thì giữ bản của máy này */
+    else if(m.type==='full'){ SUM=m.summary||null; GAME=m.game||null; render(); }
+    else if(m.type==='game'){ GAME=m.game||null; renderVO(); }
+    else if(m.type==='summary'){ SUM=m.summary||null; if(!SUM) S.set.sum=0; render(); }
+    else if(m.type==='avatar'){ if(m.url) AV[m.n]=m.url; else delete AV[m.n]; render(); } };
+  ws.onclose=()=>{ setSt(false); clearInterval(pingT); setTimeout(connect,Math.min(15000,1000*2**tries++)); }; }
+const hh=()=>{ const t=document.querySelector('.top'); document.documentElement.style.setProperty('--hh',(t&&getComputedStyle(t).position==='sticky'?t.offsetHeight:0)+'px'); };
+addEventListener('resize',hh); setInterval(hh,1500);
+if(PIN) login(PIN); else $('#gate').hidden=false;
+</script></body></html>

@@ -1,0 +1,180 @@
+﻿QUẢN TRÒ ĐẠO LÝ · WEB QUẢN TRÒ + OVERLAY OBS KIỂM PHIẾU (HƯỚNG DẪN CHO WINDOWS)
+================================================================================
+
+Trong thư mục này:
+  1-DANG-NHAP-CLOUDFLARE.bat   bấm đúp: đăng nhập Cloudflare (chỉ làm 1 lần)
+  2-DANG-WEB.bat               bấm đúp: đăng web lên quantro.hoisoidaoly.workers.dev
+  public\index.html            web quản trò (bản của bạn + mã QR + gửi kết quả lên OBS)
+  public\overlay.html          trang overlay kiểm phiếu cho OBS (nền trong suốt)
+  public\overlay-nguoi-choi.html  overlay 12 người chơi cho OBS
+  public\dieu-khien.html          bảng điều khiển overlay 12 người chơi
+  public\frames\      24 khung trăng (a01–a12 trắng, p01–p12 đỏ POV) từ file của bạn
+  public\roles\       icon vai (lấy từ bộ tranh vai của web quản trò)
+  src\worker.js                trạm chuyển tiếp từ điện thoại sang OBS
+  wrangler.toml                cấu hình Cloudflare (tên Worker)
+
+Từ bản này, đăng web bằng 2 file .bat ở trên, không kéo thả index.html như trước nữa
+(trạm chuyển tiếp cần tính năng Durable Objects, gói miễn phí của Cloudflare dùng được).
+
+
+BƯỚC 0 · CHUẨN BỊ (làm 1 lần)
+-----------------------------
+0.1 Cài Node.js: vào https://nodejs.org , tải bản "LTS" cho Windows (file .msi),
+    bấm Next đến hết. Cài xong nên khởi động lại máy cho chắc.
+0.2 Giải nén file zip ra một thư mục cố định, ví dụ  D:\quantro
+    (Đừng chạy thẳng trong cửa sổ xem file zip, phải giải nén trước:
+     chuột phải file zip > Extract All.)
+0.3 Mở Cloudflare dashboard > Workers & Pages, xem tên Worker đang chạy
+    quantro.hoisoidaoly.workers.dev. Mở file wrangler.toml bằng Notepad,
+    dòng  name = "quantro"  phải trùng tên đó. Khác thì sửa cho trùng rồi lưu.
+    (Không trùng thì Cloudflare tạo thêm 1 trang mới ở địa chỉ khác.)
+
+
+BƯỚC 1 · ĐĂNG NHẬP CLOUDFLARE (làm 1 lần)
+-----------------------------------------
+Bấm đúp  1-DANG-NHAP-CLOUDFLARE.bat
+- Windows hỏi "Windows protected your PC" thì bấm More info > Run anyway.
+- Lần đầu chạy sẽ tải công cụ wrangler mất khoảng 1 phút.
+- Trình duyệt mở ra: đăng nhập đúng tài khoản Cloudflare rồi bấm Allow.
+- Thấy dòng "Successfully logged in" là xong, bấm phím bất kỳ để đóng.
+
+
+BƯỚC 2 · ĐĂNG WEB (làm lại mỗi khi có bản sửa mới)
+--------------------------------------------------
+Bấm đúp  2-DANG-WEB.bat
+- Chạy xong sẽ thấy địa chỉ https://quantro.hoisoidaoly.workers.dev
+- Trình duyệt tự mở trang overlay mẫu: thấy bảng "Người bị loại khỏi làng"
+  ở cạnh dưới (nền trắng trên trình duyệt, trong OBS sẽ trong suốt) là thành công.
+- Báo lỗi đỏ thì chụp màn hình cửa sổ đen gửi cho Claude.
+
+Có bản sửa mới: chép đè file mới vào thư mục public\ rồi bấm đúp lại 2-DANG-WEB.bat.
+
+
+BƯỚC 3 · GẮN VÀO OBS (làm 1 lần)
+--------------------------------
+3.1 Điện thoại quản trò mở https://quantro.hoisoidaoly.workers.dev
+    Menu > Overlay OBS > bấm "Bật" > "Sao chép link", gửi link sang máy stream
+    (Zalo/Messenger cho chính mình). Mã phòng được nhớ trên điện thoại đó, lần sau không đổi.
+    Quản trò dùng điện thoại khác thì làm lại bước này và cập nhật link trong OBS.
+3.2 OBS > khung Sources > dấu + > Browser > đặt tên "Kiểm phiếu" > OK.
+    URL: dán link. Width: 1920. Height: 1080.
+    BỎ chọn "Shutdown source when not visible". Bấm OK.
+    Kéo nguồn "Kiểm phiếu" lên trên cùng danh sách Sources để không bị che.
+3.3 Trên điện thoại bấm "Gửi thử": OBS hiện bảng mẫu là đã nối thành công.
+    Bấm "Ẩn overlay" để ẩn.
+
+Chỉnh vị trí/kích thước: thêm vào cuối link trong OBS
+  &y=78     khoảng cách từ đáy màn hình (px)
+  &w=800    chiều rộng bảng (px)
+  &hide=20  tự ẩn sau 20 giây (mặc định: giữ tới khi sang đêm hoặc quản trò bấm Ẩn)
+  &test=1   hiện bảng mẫu để căn vị trí (1 bị loại · 2 đắc cử Thị trưởng · 3 hòa phiếu
+            · 4 không ai bị loại · 5 mất cúp · 6 hòa bầu Thị trưởng). Căn xong nhớ xóa &test=…
+Sửa link xong, chuột phải nguồn > Properties > "Refresh cache of current page".
+
+
+KHI CHƠI
+--------
+- Quản trò bấm "Chốt phiếu" ở bầu Thị trưởng hoặc vote loại: bảng hiện lên OBS.
+  Hòa phiếu, PK, mất cúp, không ai bị loại đều có tiêu đề riêng.
+- Bảng tự ẩn khi sang đêm. Lùi bước bỏ lượt vote đã gửi thì bảng cũng tự ẩn.
+- Menu > Overlay OBS: "Hiện lại" kết quả cuối, "Ẩn overlay", hoặc "Tắt" khi không stream.
+- Overlay chỉ nhận số ghế và số phiếu, không bao giờ gửi vai.
+- Set Công chúa: tổng phiếu đã gồm 0,5 phiếu của Công chúa đang ngủ (giống web quản trò).
+- Bảng không hiện: kiểm tra điện thoại có mạng, Menu > Overlay OBS đang "Bật",
+  dòng trạng thái báo "màn hình OBS đang nhận" lớn hơn 0. Bằng 0 thì trong OBS
+  chuột phải nguồn > Refresh.
+
+
+MÃ QR LUẬT CHƠI
+---------------
+Sau bước Cài đặt đồng hồ, bấm "Xác nhận ván" sẽ hiện mã QR, rồi bấm "Bắt đầu đêm 1".
+Mở lại giữa ván: Menu > Mã QR luật chơi.
+
+
+OVERLAY 12 NGƯỜI CHƠI (ĐIỀU KHIỂN KHI LIVE)
+-------------------------------------------
+1. Mở  https://quantro.hoisoidaoly.workers.dev/dieu-khien  trên laptop hoặc điện thoại.
+   Lần đầu nhập một mã PIN (ít nhất 4 ký tự): mã đó thành mã PIN của phòng, lần sau
+   phải nhập đúng mới chỉnh được. Máy đã vào rồi thì tự nhớ.
+2. Trước buổi live:
+   - "Nhập tên": dán 12 tên, mỗi dòng 1 tên theo thứ tự số 1–12.
+   - Bấm vào từng ảnh để chọn ảnh, hoặc "Nhập nhiều ảnh" chọn cùng lúc 12 ảnh.
+     Đặt tên file bắt đầu bằng số ghế (01.jpg, 2-jang.png…) thì ảnh vào đúng số;
+     không có số thì xếp lần lượt vào các ô chưa có ảnh. Web tự cắt vuông và nén nhẹ.
+   - "Link OBS" › Sao chép › OBS › Sources › + › Browser, dán link, 1920×1080,
+     bỏ chọn "Shutdown source when not visible".
+3. Trong buổi live:
+   - CHẾT: khung xám (hoặc dấu X đỏ, chọn ở nút "Chết: xám / Chết: dấu X").
+   - POV: đổi sang khung đỏ. Bật được nhiều người cùng lúc.
+   - "+ Icon vai": icon hiện ở góc trên, phía đối diện con số trên khung. Gắn được nhiều icon.
+   - TT: gắn cúp Thị trưởng, nằm giữa cạnh phía trong khung (hướng vào giữa màn hình).
+   - A− / A+ ở mỗi thẻ: cỡ chữ tên từng người. Thanh "Cỡ chữ" trên cùng: cả 12 người.
+   - ĐANG PHÁT BIỂU: bấm vào khung (hoặc ảnh) của người đang nói, khung đó sáng vàng
+     nhấp nháy nhẹ trên stream. Bấm người khác là chuyển, bấm lại là tắt.
+     Thanh "Đang phát biểu" trên cùng: "Người kế ▶" chuyển sang ghế kế tiếp còn sống,
+     ◀ quay lại, "Tắt" để tắt. Trên laptop dùng phím ← → và Esc.
+     Bấm Chết cho người đang nói thì vòng sáng tự tắt; người đã chết không bấm sáng được.
+     Nút 📷 nhỏ ở góc ảnh: "Chọn ảnh mới" (mở ngay màn cắt ảnh) hoặc
+     "Chỉnh ảnh hiện tại": kéo để dời, thanh trượt / lăn chuột / chụm 2 ngón để zoom,
+     ⟳ Xoay, Về giữa, rồi Xong. Ảnh nhập nhiều cùng lúc được tự cắt giữa, ô nào lệch
+     thì bấm 📷 > Chỉnh ảnh hiện tại. Mở lại lần sau vẫn giữ đúng vị trí đã cắt.
+   - Bố cục cố định: cột trái số 1–6, cột phải số 7–12.
+   - "Ẩn overlay" để ẩn cả 12 khung (ví dụ lúc chiếu màn hình khác).
+4. Tự đánh dấu chết & Thị trưởng từ web quản trò:
+   Web quản trò › Menu › Overlay OBS: chọn Bật, nhập Mã phòng (TTDL nếu không đổi) và
+   đúng mã PIN của bảng điều khiển, tích "Tự đánh dấu người chết & Thị trưởng".
+   MỘT mã phòng + MỘT mã PIN dùng chung cho cả bảng kiểm phiếu và khung 12 người.
+   Link OBS của cả hai nằm ngay trong bảng này (và ở nút "Link OBS" của trang điều khiển).
+   Lưu ý: link kiểm phiếu cũ (mã ngẫu nhiên kiểu 2KQ8ZK) không dùng nữa, thay bằng
+   link mới  /overlay?room=TTDL  trong OBS.
+   - Chết đêm lên overlay đúng lúc web quản trò hiện màn công bố người chết
+     (ngày 1: sau khi bầu xong Thị trưởng, đúng lúc công bố).
+   - Chết ngày lên overlay khi bấm sang đêm tiếp theo.
+   - Thị trưởng tự đổi khi đắc cử, truyền phiếu, xé phiếu.
+   - Lùi bước trên web quản trò thì overlay lùi theo.
+   - Tích "Gửi luôn tên" nếu muốn lấy tên ghế 1–12 từ web quản trò.
+   Vẫn bấm tay ở bảng điều khiển được; lần đổi tiếp theo trên web quản trò sẽ ghi đè.
+5. Dấu X riêng: đã dùng dấu X của bạn (public/frames/x.webp), hiện khi chọn
+   "Chết: dấu X". Muốn đổi thì thay file đó rồi chạy lại 2-DANG-WEB.bat.
+   Bàn tay tranh cử: tự hiện ở chỗ cúp Thị trưởng cho người lên giàn (PK thì chỉ người PK),
+   bầu xong Thị trưởng hoặc mất cúp thì tự mất. Cần bật "Tự đánh dấu" ở web quản trò.
+   Tổng kết ván: kết thúc ván trên web quản trò là bảng tổng kết được gửi lên (chấm MVP/SVP
+   thì tự cập nhật). Ở trang điều khiển bấm "Hiện tổng kết ván" để hiện giữa màn hình
+   (che cam), chọn trang "Bài từng số" hoặc "Diễn biến", bấm lại để ẩn.
+   Ván mới trên web quản trò sẽ tự xóa bảng cũ.
+6. Hết ván: "Ván mới" bỏ hết dấu chết, POV, icon vai, Thị trưởng (giữ tên và ảnh).
+   "Xóa hết tên và ảnh" khi đổi nhóm người chơi.
+- Mọi thứ lưu trên Cloudflare: tắt OBS, tải lại trang vẫn giữ nguyên.
+- Nhiều người cùng điều khiển được (laptop + điện thoại), các máy tự đồng bộ.
+- Muốn dùng 2 bộ overlay khác nhau: thêm ?room=TEN vào cả link điều khiển lẫn link OBS.
+- Chỉnh khung trên stream: thêm vào link OBS &fw=188 (bề rộng khung) &gap=179
+  (khoảng cách dọc) &x=6 (lề ngang) &y=4 (lề trên) &ny=0.825 (vị trí dọc của tên,
+  số nhỏ hơn là tên lên cao hơn).
+
+
+KHUNG KIỂM PHIẾU + KHUNG IDLE (bản v10)
+---------------------------------------
+Giao diện mới theo masoithitruong.com: giấy kem có hoa văn mờ, viền gỗ, tab xanh trên đầu,
+chữ Quicksand, số Space Mono. Một khung duy nhất ở giữa cạnh dưới:
+- Có kết quả vote: hiện bảng kiểm phiếu (tab đỏ khi loại người, tab vàng khi đắc cử Thị trưởng).
+- Không có: xoay 3 thẻ, mỗi thẻ 9 giây: Tình hình làng · Vai trò trong ván · Vai đặc biệt.
+
+Bảng kiểm phiếu tự ẩn (web quản trò quyết định, không cần bấm):
+- Bầu Thị trưởng (kể cả PK): giữ đến khi vào vòng phát biểu và qua người nói đầu tiên.
+- Vote loại: giữ hết đêm; sáng hôm sau công bố người chết xong (bấm sang bước ngày) thì ẩn.
+- Ẩn xong luôn quay về thẻ Tình hình làng trước.
+- Ván mới hoặc lùi bước bỏ lượt vote thì ẩn ngay. Nút "Ẩn kiểm phiếu" trên web quản trò vẫn dùng được.
+
+Trang điều khiển › tab "Khung kiểm phiếu":
+- Khung xem trước giống trên stream.
+- Thanh trượt: Cỡ khung (phóng to/thu nhỏ cả khung và chữ), Ngang, Dọc (cách đáy), Cao khung idle.
+  "Về mặc định" để trả lại vị trí ban đầu. Giá trị lưu trên Cloudflare, mở OBS lại vẫn giữ.
+- "Ẩn toàn bộ khung": ẩn cả bảng kiểm phiếu lẫn thẻ idle trên stream; bấm lại để hiện.
+- Vai cần giải thích: mặc định theo web quản trò (vai không cơ bản của set). Tích thêm vai nào thì
+  thẻ "Vai đặc biệt" giải thích lần lượt các vai đó (theo thứ tự tích, mỗi vòng 1 vai).
+  "Thêm vai khác" để chọn vai không có trong ván. "Theo web quản trò" để quay về mặc định.
+  Đổi set vai thì lựa chọn tự trở về mặc định.
+
+Cập nhật: chép đè public\index.html, public\overlay.html, public\dieu-khien.html, src\worker.js
+rồi bấm đúp 2-DANG-WEB.bat. OBS: chuột phải nguồn "Kiểm phiếu" › Properties › "Refresh cache of current page".
+Link OBS vẫn như cũ (/overlay?room=TTDL). Không cần thêm tham số &y= &w= nữa (vẫn còn &test=1..6, &test=idle để xem mẫu).

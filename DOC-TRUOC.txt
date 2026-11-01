@@ -1,0 +1,56 @@
+﻿ĐỌC TRƯỚC · QUẢN TRÒ ĐẠO LÝ (bản v10, 19/10/2026)
+=================================================
+Bộ công cụ livestream Ma Sói Thị Trưởng của Thị Trấn Đạo Lý, chạy trên Cloudflare Workers (gói miễn phí).
+
+CÓ GÌ TRONG GÓI
+---------------
+  public/index.html               Web quản trò (chạy ván, gọi đêm, tính chết, vote, mã QR luật chơi,
+                                  gửi kết quả lên OBS)
+  public/overlay.html             Overlay OBS: bảng kiểm phiếu + khung idle (Tình hình làng, Vai trò
+                                  trong ván, Vai đặc biệt) ở giữa cạnh dưới
+  public/overlay-nguoi-choi.html  Overlay OBS: 12 khung người chơi hai bên
+  public/dieu-khien.html          Trang điều khiển: tab "12 người chơi" (tên, ảnh, chết, POV, icon vai,
+                                  người đang nói, tổng kết ván) và tab "Khung kiểm phiếu" (cỡ, vị trí,
+                                  ẩn/hiện, chọn vai cần giải thích)
+  public/roles, frames, glow, assets   Icon vai, khung trăng, hiệu ứng, ảnh cúp/bàn tay
+  src/worker.js                   Trạm chuyển tiếp: nhận dữ liệu từ web quản trò / trang điều khiển,
+                                  đẩy lên OBS qua WebSocket, lưu trạng thái (Durable Objects)
+  wrangler.toml                   Cấu hình Cloudflare (tên Worker)
+  1-DANG-NHAP-CLOUDFLARE.bat      Đăng nhập Cloudflare (Windows, làm 1 lần)
+  2-DANG-WEB.bat                  Đăng web lên Cloudflare (làm lại mỗi khi sửa file)
+  HUONG-DAN.txt                   Hướng dẫn chi tiết: cài đặt, gắn OBS, dùng khi live
+  anh-mau/                        Ảnh mẫu giao diện overlay và trang điều khiển
+
+CÁC ĐỊA CHỈ (sau khi đăng web)
+------------------------------
+  Web quản trò        https://<tên-worker>.<tài-khoản>.workers.dev
+  Trang điều khiển    .../dieu-khien?room=TTDL
+  OBS · kiểm phiếu    .../overlay?room=TTDL          (Browser Source 1920×1080)
+  OBS · 12 người      .../overlay-nguoi-choi?room=TTDL
+  Một mã phòng + một mã PIN dùng chung cho tất cả. Mã PIN do người dùng đặt lần đầu, KHÔNG nằm trong gói này.
+
+HAI CÁCH DÙNG
+-------------
+A. Dùng chung tài khoản Cloudflare đang chạy (quantro.hoisoidaoly.workers.dev):
+   làm theo HUONG-DAN.txt, không cần sửa gì. Cần chủ tài khoản đăng nhập ở bước 1.
+
+B. Đăng lên tài khoản Cloudflare của riêng bạn:
+   1. Cài Node.js LTS, chạy 1-DANG-NHAP-CLOUDFLARE.bat bằng tài khoản của bạn.
+   2. Địa chỉ cũ "quantro.hoisoidaoly.workers.dev" đang được ghi cứng ở các chỗ sau, thay bằng địa chỉ
+      Worker mới của bạn (mở bằng Notepad, Ctrl+H để thay):
+        public/index.html              (dòng const XEM_BASE=...: link mã QR và gửi lên overlay)
+        public/overlay.html            (chỉ dùng khi mở file trực tiếp không qua web)
+        public/overlay-nguoi-choi.html (như trên)
+        public/dieu-khien.html         (như trên)
+        2-DANG-WEB.bat, 1-DANG-NHAP-CLOUDFLARE.bat (chỉ là dòng mở trang thử / lời nhắc)
+   3. Chạy 2-DANG-WEB.bat. Dữ liệu (tên, ảnh người chơi, mã PIN) không chuyển theo; nhập lại ở phòng mới.
+
+GHI CHÚ KỸ THUẬT
+----------------
+- Dữ liệu chảy: web quản trò  →  POST /api/room/<PHÒNG> (kết quả vote) và /api/stage/<PHÒNG> (người chết,
+  Thị trưởng, thông tin ván, tổng kết)  →  Worker lưu + phát WebSocket  →  overlay trong OBS.
+- Overlay chỉ nhận thông tin công khai (số ghế, phiếu, người đã công bố chết, bộ vai của ván).
+  Không bao giờ gửi ai giữ vai nào, trừ bảng tổng kết sau khi ván kết thúc.
+- Xem mẫu không cần ván thật: thêm &test=1..6 (các kiểu bảng kiểm phiếu) hoặc &test=idle vào link overlay.
+- Bản v10 chưa chạy qua một ván live thật: để ý lúc bảng bầu Thị trưởng tự ẩn (qua người nói đầu tiên)
+  và lúc bảng vote loại tự ẩn (sáng hôm sau, sau khi công bố người chết).
