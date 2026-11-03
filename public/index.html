@@ -908,7 +908,7 @@ const PACK_ROLES=WOLF.filter(k=>k!=='roi'&&k!=='quytuong'); /* Quỷ tượng kh
 /* Các vai Sói gán số ngay ở bước Bầy Sói (trước Tiên tri) */
 const PACK_LATE=['soi','sansoi','thuongnhan','mynhan','acma','quanguc'];
 /* Thứ tự gọi đêm, khớp timeline các set: ... Bảo vệ → Bầy Sói → Phù thủy → Tiên tri → Sói giao dịch → (vai chỉ gán số đêm 1) → Kỵ sĩ → Thợ săn → Sói Mỹ Nhân → Ác ma (luôn dậy cuối cùng) */
-const ORDER=['phongan','medusa','conlai','aothuat','soiaothuat','quythuat','mima','truonglao','baove','cao','gau','detmong','hodiep','quanguc','PACK','quytuong','ROI','phuthuy','tientri','canhmo','TRADE','thosanquy','perseus','ngoc','phanquan','cancan','kysi','thosan','sansoi','mynhan','acma'];
+const ORDER=['phongan','medusa','conlai','aothuat','soiaothuat','quythuat','mima','truonglao','baove','cao','gau','detmong','hodiep','quanguc','PACK','ROI','phuthuy','tientri','TRADE','thosanquy','perseus','ngoc','phanquan','cancan','kysi','thosan','canhmo','sansoi','mynhan','acma','quytuong'];
 const EVERY_NIGHT=['quytuong','canhmo','phongan','medusa','aothuat','soiaothuat','quythuat','mima','truonglao','baove','detmong','quanguc','PACK','phuthuy','tientri','TRADE','thosanquy','perseus','kysi','thosan','sansoi','acma','mynhan'];
 
 /* ===== CÁC SET CÓ SẴN (file SETGAME) =====
@@ -1902,10 +1902,10 @@ function actionBlock(id){
     case 'quanguc': return jailBlock();
     case 'tientri': return pick(id,1,{title:'Soi ai?'})+(t0!=null?seerResult(act('tientri')):'');
     case 'quytuong': { const me=aliveHolders('quytuong')[0], t1=tgt('quytuong');
-      return (qtAlone()?'<div class="note">Sói thường đã chết hết: Quỷ tượng vừa giết người ở bước Bầy Sói, giờ soi tiếp.</div>':'')+pick(id,1,{title:'Quỷ tượng soi ai?',sub:'biết rõ chức năng',dis:p=>p===me?'self':null})+(t1!=null?gargResult(act('quytuong')):''); }
+      return (qtAlone()?'<div class="note">Sói thường đã chết hết: Quỷ tượng đã giết người ở bước Bầy Sói, giờ gọi dậy lại để soi.</div>':'')+pick(id,1,{title:'Quỷ tượng soi ai?',sub:'biết rõ chức năng',dis:p=>p===me?'self':null})+(t1!=null?gargResult(act('quytuong')):''); }
     case 'canhmo': return graveResult();
     case 'PACK': { if(qtAlone()){ const q=aliveHolders('quytuong')[0];
-        return `<div class="note">Sói thường đã chết hết. <b>Gọi Quỷ tượng (số ${q})</b> dậy: đêm nay Quỷ tượng giết người.</div>`+pick(id,1,{title:'Quỷ tượng giết ai?',dis:p=>p===q?'self':null,none:'🚫 Quỷ tượng không giết ai'}); }
+        return `<div class="note">Sói thường đã chết hết. <b>Gọi Quỷ tượng (số ${q})</b> dậy: đêm nay Quỷ tượng giết người. Lượt soi của Quỷ tượng vẫn ở cuối đêm.</div>`+pick(id,1,{title:'Quỷ tượng giết ai?',dis:p=>p===q?'self':null,none:'🚫 Quỷ tượng không giết ai'}); }
       const sl=wolfSealed(), noBite=PACK_ROLES.filter(r=>r==='mynhan'||r==='acma').flatMap(holders);
       return specialWolvesNote()+tradeBlock()+puppetBlock()+(!packAlive()?'':sl!=null?`<div class="note bad">Phong ấn trúng Sói số ${sl}: đêm nay bầy <b>không được cắn</b>.</div>`:pick(id,1,{title:'Bầy Sói cắn ai?',sub:'không thống nhất thì bấm Không cắn',dis:p=>noBite.includes(p)?'taken':null})+(noBite.length?'<div class="note">Sói Mỹ Nhân và Ác Ma không bị bầy cắn.</div>':'')); }
     case 'TRADE': return tradeStep();
