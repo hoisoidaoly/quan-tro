@@ -2652,15 +2652,17 @@ function mayorTransferHtml(exclude){
   <button class="ghost red" data-a="mnext" data-v="x" style="${pick==='x'?'background:var(--wolf);color:#fff;border-style:solid':''}">Xé phiếu Thị trưởng</button></div>`; }
 function hunterShotHtml(){
   const L=nightShooters(); if(!L.length) return ''; const D=S.shots||{}, cur=hunterShooter(), sel=S.shotPick;
-  return L.map(x=>{
-    if(x.no) return `<div class="box"><h3>${x.label} số ${x.h} không được bắn</h3><p>Bị loại vì ${x.no}: bỏ qua phát bắn.</p></div>`;
-    const d=D[x.k||x.h];
-    if(d) return `<div class="box"><h3>🔫 ${x.label} số ${x.h}</h3><p>${d.t!=null?`Bắn số ${d.t}${pname(d.t)?' · '+esc(pname(d.t)):''}: số ${d.t} bị loại.`:'Không bắn ai.'}${d.drag!=null?` <b style="color:var(--wolf)">Sói Mỹ Nhân bị bắn: kéo theo số ${d.drag}.</b>`:''}</p></div>`;
-    if(S.win) return `<div class="box"><h3>${x.label} số ${x.h} không cần bắn</h3><p>Ván đã kết thúc (${esc(winName(S.win.side))}).</p></div>`;
-    if(!cur||(cur.k||cur.h)!==(x.k||x.h)) return `<div class="box"><h3>🔫 ${x.label} số ${x.h} được bắn</h3><p>Chờ người trước bắn xong.</p></div>`;
-    return `<div class="box red"><h3>🔫 ${x.label} số ${x.h} được bắn</h3><p>${x.by!=null?`Bị số ${x.by} bắn trúng nên được bắn tiếp. `:''}${x.label} chọn 1 số để bắn, người đó bị loại luôn.</p>
+  /* Gọn: các phát đã bắn / không được bắn gom vào 1 khung nhỏ; chỉ hiện 1 bảng bắn cho người đang cầm súng */
+  const lines=L.map(x=>{ if(x.no) return `${x.label} số ${x.h}: không được bắn (bị loại vì ${x.no}).`;
+    const d=D[x.k||x.h]; if(!d) return null;
+    return `🔫 ${x.label} số ${x.h}: ${d.t!=null?`bắn số ${d.t}${pname(d.t)?' · '+esc(pname(d.t)):''}`:'không bắn ai'}.${d.drag!=null?` <b style="color:var(--wolf)">Sói Mỹ Nhân bị bắn: kéo theo số ${d.drag}.</b>`:''}`; }).filter(Boolean);
+  const sum=lines.length?`<div class="box"><h3>Kết quả bắn</h3>${lines.map(t=>`<p style="margin:4px 0">${t}</p>`).join('')}</div>`:'';
+  if(!cur) return sum+(S.win&&L.some(x=>!x.no&&!D[x.k||x.h])?`<div class="box"><h3>Không cần bắn nữa</h3><p>Ván đã kết thúc (${esc(winName(S.win.side))}).</p></div>`:'');
+  if(S.win) return sum+`<div class="box"><h3>${cur.label} số ${cur.h} không cần bắn</h3><p>Ván đã kết thúc (${esc(winName(S.win.side))}).</p></div>`;
+  const x=cur;
+  return `<div class="box red"><h3>🔫 ${x.label} số ${x.h} được bắn</h3><p>${x.by!=null?`Bị số ${x.by} bắn trúng nên được bắn tiếp. `:''}Chọn 1 số để bắn, người đó bị loại luôn.</p>
     ${dRing({act:'spick',cls:p=>sel===p?'on':''})}
-    <div class="row2"><button class="pill red" data-a="sgo" ${sel==null?'disabled':''}>${sel==null?'Chọn số bị bắn':'Bắn số '+sel}</button><button class="pill" data-a="snone">Không bắn</button></div></div>`; }).join(''); }
+    <div class="row2"><button class="pill red" data-a="sgo" ${sel==null?'disabled':''}>${sel==null?'Chọn số bị bắn':'Bắn số '+sel}</button><button class="pill" data-a="snone">Không bắn</button></div></div>`+sum; }
 /* Người bị loại ban ngày có súng (Thợ săn, Sói săn, Sói giữ Súng): được bắn 1 người */
 function dayShooters(blockedOut){ const dd=dayDrag(), gun=curGun(), out=new Set([...S.dayPick,...(dd!=null?[dd]:[])].filter(p=>!isAfk(p)));
   return [...out].flatMap(p=>roleOf(p)==='xathu'&&xtGuns()>=2&&!S.dayWhy[p]?.includes('độc')?[p,p+0.5]:[p]).filter(p=>{ if(p%1){ return !(p in S.dshot); } const r=roleOf(p); if(!((r==='thosan'||r==='sansoi'||p===gun||extraGun(p)>0)&&S.puppet!==p&&p!==dd&&!(p in S.dshot)&&!S.dayWhy[p]?.includes('độc'))) return false;
