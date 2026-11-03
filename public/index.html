@@ -1939,10 +1939,12 @@ function actionBlock(id){
       if(el.length<3) return hist+`<div class="note bad">Chỉ còn ${el.length} người chưa nhảy: <b>không lập vũ hội nữa</b>. Gọi Vũ sư dậy cho đúng nhịp rồi mời ngủ.</div>`;
       return hist+pick(id,3,{title:'Chọn 3 người dự vũ hội',sub:((c&&c.t)||[]).length+'/3',dis:p=>dz[p]?'taken':null,labelFn:p=>dz[p]||null,none:'🚫 Không lập vũ hội đêm nay'})+'<div class="note">Vũ sư được chọn cả chính mình. Có Vũ sư trong đội nhảy thì cả 3 miễn vết cắn Sói.</div>'; }
     case 'matna': { if(N<2) return '<div class="note">Từ <b>đêm 2</b> Mặt nạ mới kiểm tra và đeo mặt nạ. Đêm 1 gọi dậy cho đúng nhịp rồi mời ngủ.</div>';
-      const d=danceNow(), q=tgt('matnaq');
-      const chk=pick('matnaq',1,{title:'1 · Kiểm tra ai có trong vũ hội?',none:'Không kiểm tra'})+(q!=null?`<div class="result"><div class="r ${d&&d.includes(q)?'soi':'tot'}">${d&&d.includes(q)?'Có trong vũ hội 💃':'Không có trong vũ hội'}</div><small>Số ${q} · ra dấu 👍 (có) / 👎 (không) cho Mặt nạ.</small></div>`:'');
+      const d=danceNow(), q=tgt('matnaq'), qc=S.cur.matnaq, step1=q!=null||(qc&&qc.none), inD=q!=null&&!!d&&d.includes(q);
+      let h=pick('matnaq',1,{title:'Bước 1 · Kiểm tra ai có trong đội nhảy?',none:'Không kiểm tra'});
+      if(q!=null) h+=`<div class="result"><div class="r ${inD?'tot':'soi'}">${inD?'👍 LIKE':'👎 DISLIKE'}</div><small>Số ${q} ${inD?'<b>có</b>':'<b>không</b>'} trong đội nhảy đêm nay${d?'':' (đêm nay không có vũ hội)'}. Ra dấu ${inD?'👍':'👎'} cho Mặt nạ.</small></div>`;
+      if(!step1) return h+'<div class="note">Kiểm tra xong mới tới bước 2: úp mặt nạ.</div>';
       const o=danceOutcome();
-      return (d?'':'<div class="note">Đêm nay không có vũ hội.</div>')+chk+pick('matna',1,{title:'2 · Đeo mặt nạ cho ai?',sub:'đổi phe khi tính vũ hội',none:'Không đeo mặt nạ'})+(o?`<div class="note">Riêng quản trò · ${esc(danceTxt(o))}</div>`:''); }
+      return h+pick('matna',1,{title:'Bước 2 · Úp mặt nạ vào ai?',sub:'người đó bị đổi phe khi tính vũ hội',none:'Không úp mặt nạ'})+(o?`<div class="note">Riêng quản trò · ${esc(danceTxt(o))}</div>`:''); }
     case 'VSASG': return `<div class="note">Vũ sư là <b>số ${holders('vusu').join(', ')}</b>. Mời Vũ sư ngủ. Sau Kẻ ngốc mới gọi dậy lại để lập vũ hội (từ đêm 2).</div>`;
     case 'QTASG': return SOLO.filter(on).map(k=>`<div class="note">${ROLES[k].n} là <b>số ${holders(k).join(', ')}</b>. Mời ${ROLES[k].n} ngủ. ${k==='matna'?'Cuối đêm (sau Vũ sư) mới gọi dậy lại để dùng chức năng (từ đêm 2).':'Cuối đêm (sau Canh mộ) mới gọi dậy lại để soi.'}</div>`).join('');
     case 'PACK': { if(qtAlone()){ const sk=soloKiller(), q=aliveHolders(sk)[0], SN=ROLES[sk].n;
