@@ -1076,6 +1076,10 @@ const ttGun=p=>!!(S.tt&&S.tt.kind==='sung'&&!S.tt.wolf&&S.tt.p===p);
 function xtGuns(){ return 2-(S.xt||[]).length; }
 function xtRecv(){ const a=(S.xt||[]).slice(); if(S.step==='night'){ const g=tgt('xtgive'); if(g!=null&&canUse('xathu')&&a.length<2&&!a.includes(g)) a.push(g); } return a; }
 function extraGun(p){ if(p==null) return 0; if(roleOf(p)==='xathu') return xtGuns(); if((S.xt||[]).includes(p)) return 1; if(ttGun(p)) return 1; return 0; }
+function xtCan(){ const x=aliveHolders('xathu')[0]; if(x==null||!on('xathu')||blocked('xathu',x)||xtGuns()<=0) return []; return nums().filter(p=>alive(p)&&isWolfCard(p)&&p!==x&&!(S.xt||[]).includes(p)&&roleOf(p)!=='xathu'); }
+const xtWaiting=()=>{ const c=S.cur.xtgive; return xtCan().length>0&&!(c&&((c.t&&c.t.length)||c.none)); };
+function xtBar(){ if(!xtCan().length) return xathuBlock(); const g=tgt('xtgive');
+  return `<div class="mnres ${g!=null?'ok':''}"><b>🔫 ${g!=null?'Cho súng số '+g:'Không cho súng'}</b><span>Xạ thủ số ${aliveHolders('xathu')[0]} · còn ${xtGuns()} cây</span><button data-a="xtre">Đổi</button></div>`; }
 function xathuBlock(){ const x=aliveHolders('xathu')[0]; if(x==null||!on('xathu')||blocked('xathu',x)) return '';
   if(xtGuns()<=0) return '<div class="note">Xạ thủ đã tặng hết 2 cây súng: giờ là Sói thường.</div>';
   const can=nums().filter(p=>alive(p)&&isWolfCard(p)&&p!==x&&!(S.xt||[]).includes(p)&&roleOf(p)!=='xathu');
@@ -1982,7 +1986,7 @@ function actionBlock(id){
     case 'XT0': { const x=holders('xathu')[0]; if(x==null) return '';
       if(!alive(x)) return `<div class="note bad">Sói Xạ thủ (số ${x}) đã bị loại. Vẫn gọi giả cho đúng nhịp.</div>`;
       const g=2-xtRecv().length;
-      if(g<=0) return `<div class="result"><div class="r soi">Hết súng</div><small>Xạ thủ số ${x} đã cho đi cả 2 cây, giờ là Sói thường. Ra dấu 👎.</small></div>`;
+      if(g<=0) return `<div class="note">Xạ thủ số ${x} đã cho hết 2 cây súng. <b>Cứ gọi dậy cho đúng nhịp, không ra dấu gì</b>, rồi mời ngủ.</div>`;
       const k=shootOk(x); return `<div class="result"><div class="r ${k.ok?'tot':'soi'}">${k.ok?'Được khai súng':'Không được khai súng'}</div><small>Xạ thủ số ${x} còn giữ <b>${g} cây</b>${g===2?' (chưa cho ai: chết được bắn 2 người, song tiễn)':' (chết được bắn 1 người)'}. ${k.ok?'Ra dấu 👍':'Ra dấu 👎 · '+k.why}</small></div>`; }
     case 'XT1': case 'XT2': { const i=id==='XT1'?0:1, p=xtRecv()[i]; if(p==null) return '';
       const nw=!(S.xt||[]).includes(p)?'<div class="note">Vừa được Xạ thủ cho súng đêm nay: gọi dậy cho biết mình là Sói săn.</div>':'';
@@ -2017,7 +2021,7 @@ function actionBlock(id){
     case 'PACK': { if(qtAlone()){ const sk=soloKiller(), q=aliveHolders(sk)[0], SN=ROLES[sk].n;
         return `<div class="note">Sói thường đã chết hết. <b>Gọi ${SN} (số ${q})</b> dậy: đêm nay ${SN} giết người. Lượt chức năng của ${SN} vẫn ở cuối đêm.</div>`+pick(id,1,{title:SN+' giết ai?',dis:p=>p===q?'self':null,none:'🚫 '+SN+' không giết ai'}); }
       const sl=wolfSealed(), noBite=PACK_ROLES.filter(r=>r==='mynhan'||r==='acma').flatMap(holders);
-      return specialWolvesNote()+tradeBlock()+puppetBlock()+(!packAlive()?'':sl!=null?`<div class="note bad">Phong ấn trúng Sói số ${sl}: đêm nay bầy <b>không được cắn</b>.</div>`:xathuBlock()+pick(id,1,{title:(on('xathu')?'Bầy Sói cắn ai? (sau khi Xạ thủ cho súng)':'Bầy Sói cắn ai?'),sub:'không thống nhất thì bấm Không cắn',dis:p=>noBite.includes(p)?'taken':null})+(noBite.length?'<div class="note">Sói Mỹ Nhân và Ác Ma không bị bầy cắn.</div>':'')); }
+      return specialWolvesNote()+tradeBlock()+puppetBlock()+(!packAlive()?'':sl!=null?`<div class="note bad">Phong ấn trúng Sói số ${sl}: đêm nay bầy <b>không được cắn</b>.</div>`:(xtWaiting()?xathuBlock()+'<div class="note">Xạ thủ chọn xong (hoặc bấm Không cho súng) thì vòng này chuyển sang chọn người bị cắn.</div>':(on('xathu')?xtBar():'')+pick(id,1,{title:'Bầy Sói cắn ai?',sub:'không thống nhất thì bấm Không cắn',dis:p=>noBite.includes(p)?'taken':null})+(noBite.length?'<div class="note">Sói Mỹ Nhân và Ác Ma không bị bầy cắn.</div>':''))); }
     case 'TRADE': return tradeStep();
     case 'mynhan': return pick(id,1,{title:'Mê hoặc ai?',dis:p=>p===S.charm?'lock':null})+(S.charm!=null?`<div class="note">Đang mê hoặc số ${S.charm} (từ đêm trước), đêm nay không được chọn lại.</div>`:'');
     case 'phuthuy': return witchBlock();
@@ -2360,6 +2364,7 @@ document.addEventListener('click',e=>{
     case 'jail': { const c=S.cur.quanguc; if(!c) break; c.c=c.c||{}; c.c[id]=c.c[id]===v?undefined:v; break; }
     case 'none': S.cur[id]={t:[],none:S.cur[id]&&S.cur[id].none?0:1}; break;
     case 'mnre': delete S.cur.matnaq; break;
+    case 'xtre': delete S.cur.xtgive; break;
     case 'ttkind': { const c=S.cur.thantai=S.cur.thantai||{t:[]}; c.kind=c.kind===v?null:v; c.none=0; break; }
     case 'witch': S.cur.phuthuy={mode:v||null,t:null}; break;
     case 'wpo': { const c=S.cur.phuthuy; c.t=c.t===+v?null:+v; break; }
