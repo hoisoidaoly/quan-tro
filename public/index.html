@@ -27,6 +27,7 @@
 .afkbtn{margin-left:auto;margin-right:8px;height:34px;padding:0 12px;border-radius:999px;border:2px solid #C0392B;background:#FBE3DE;color:#8E1E14;font-weight:900;font-size:13px;letter-spacing:.06em}
 .afkbtn[hidden]{display:none}
 .num .stb{position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:#5E6B73;border:2px solid #D5DDE1;display:grid;place-items:center;font-size:12px;font-style:normal;z-index:3}
+.num .mkb{position:absolute;left:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:#8A6110;border:2px solid #F5C04A;display:grid;place-items:center;font-size:12px;font-style:normal;z-index:3}
 .num .afkb{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);padding:1px 6px;border-radius:999px;background:#C0392B;color:#fff;font:900 9px/14px var(--body);letter-spacing:.05em;font-style:normal;border:1.5px solid #fff;z-index:3}
 </style>
 <title>Quản Trò Đạo Lý</title>
@@ -1062,6 +1063,7 @@ const dancedSet=()=>{ const o={}; (S.danced||[]).forEach(h=>{ if(h.n!==S.night) 
 function danceEligible(){ const d=dancedSet(); return nums().filter(p=>alive(p)&&!d[p]); }
 function danceNow(){ if(S.night<2||!canUse('vusu')) return null; const t=(S.cur.vusu&&S.cur.vusu.t)||[]; return t.length===3?t.slice():null; }
 function maskNow(){ return S.night>=2&&canUse('matna')&&tgt('matna')!=null?act('matna'):null; }
+const maskLast=()=>{ const h=(S.maskHist||[]).find(x=>x.n===S.night-1); return h?h.p:null; }; /* úp mặt nạ cách đêm: đêm qua úp ai thì đêm nay không úp lại người đó */
 function danceSide(p,mask){ const w=isWolfSide(p); return (p===mask?!w:w)?'soi':'tot'; }
 function danceOutcome(){ const d=danceNow(); if(!d) return null; const m=maskNow(), sd=d.map(p=>danceSide(p,m));
   const nW=sd.filter(x=>x==='soi').length, lose=nW===0||nW===3?null:(nW===1?'soi':'tot');
@@ -1309,6 +1311,7 @@ function finishNight(){
   if(S.on.mynhan){ const b=holders('mynhan')[0]; S.charm=b!=null&&alive(b)?pre.charm:null; }
   if(S.on.detmong) S.dmLast=pre.dm;
   S.petrified=pre.petr!=null&&alive(pre.petr)?pre.petr:null;
+  { const mk=S.night>=2&&canUse('matna')?tgt('matna'):null; S.maskHist=(S.maskHist||[]).filter(h=>h.n!==S.night).concat(mk!=null?[{n:S.night,p:mk}]:[]); }
   { const dn=danceNow(); S.danced=(S.danced||[]).filter(h=>h.n!==S.night).concat(dn?[{n:S.night,ps:dn}]:[]); }
   S.stoneHist=(S.stoneHist||[]).filter(h=>h.n!==S.night).concat(pre.stoneT!=null?[{n:S.night,p:pre.stoneT}]:[]);
   if(tgt('conlai')!=null) S.model=tgt('conlai');
@@ -1816,6 +1819,7 @@ function mimaMark(p,id){ if(S.step!=='night') return null;
   if(id==='vusu'){ const t=(S.cur.vusu&&S.cur.vusu.t)||[]; if(t.includes(p)) return {cls:'dz',b:'💃',lab:'đội nhảy'}; const sn=dancedSet(); return sn[p]?{cls:'stused',b:'✔',lab:sn[p]}:null; }
   if(id==='matna'||id==='matnaq'){ const d=danceNow()||[], q=tgt('matnaq'), m=tgt('matna');
     if(p===m) return {cls:'mk',b:'🎭',lab:'úp mặt nạ'};
+    if(id==='matna'&&p===maskLast()) return {cls:'stused',b:'🎭',lab:'úp Đ'+(S.night-1)};
     if(p===q&&id==='matna') return {cls:d.includes(p)?'dz':'',b:d.includes(p)?'👍':'👎',lab:'đã kiểm tra'};
     if(d.includes(p)) return {cls:'dz',b:'💃',lab:'đội nhảy'}; return null; }
   if(id==='medusa'){ const sn=stoneSeen(); return sn[p]?{cls:'stused',b:'🗿',lab:sn[p]}:null; }
@@ -1957,7 +1961,7 @@ function actionBlock(id){
       const res=q!=null?`<div class="mnres ${inD?'ok':'no'}"><b>${inD?'👍 LIKE':'👎 DISLIKE'}</b><span>Số ${q} ${inD?'có':'không'} trong đội nhảy · ra dấu ${inD?'👍':'👎'}</span><button data-a="mnre">Đổi</button></div>`
         :`<div class="mnres"><b>Không kiểm tra</b><span></span><button data-a="mnre">Đổi</button></div>`;
       const o=danceOutcome();
-      return top+res+pick('matna',1,{title:'Bước 2 · Chạm người bị úp mặt nạ 🎭',sub:'chạm lại để bỏ',none:'Không úp mặt nạ'})+(o?`<div class="note">Riêng quản trò · ${esc(danceTxt(o))}</div>`:''); }
+      return top+res+pick('matna',1,{title:'Bước 2 · Chạm người bị úp mặt nạ 🎭',sub:'chạm lại để bỏ',dis:p=>p===maskLast()?'lock':null,none:'Không úp mặt nạ'})+(maskLast()!=null?`<div class="note">Đêm qua đã úp mặt nạ số <b>${maskLast()}</b>: đêm nay không được úp lại (cách 1 đêm mới úp lại được).</div>`:'')+(o?`<div class="note">Riêng quản trò · ${esc(danceTxt(o))}</div>`:''); }
     case 'VSASG': return `<div class="note">Vũ sư là <b>số ${holders('vusu').join(', ')}</b>. Mời Vũ sư ngủ. Sau Kẻ ngốc mới gọi dậy lại để lập vũ hội (từ đêm 2).</div>`;
     case 'QTASG': return SOLO.filter(on).map(k=>`<div class="note">${ROLES[k].n} là <b>số ${holders(k).join(', ')}</b>. Mời ${ROLES[k].n} ngủ. ${k==='matna'?'Cuối đêm (sau Vũ sư) mới gọi dậy lại để dùng chức năng (từ đêm 2).':'Cuối đêm (sau Canh mộ) mới gọi dậy lại để soi.'}</div>`).join('');
     case 'PACK': { if(qtAlone()){ const sk=soloKiller(), q=aliveHolders(sk)[0], SN=ROLES[sk].n;
@@ -2923,6 +2927,7 @@ function seatBadge(p){ const r=S.puppet===p?'roi':roleOf(p); let h=r&&r!=='dan'&
   if(ccOn()&&S.princess!=null&&S.princess===p&&S.princess!==princeSeat()) h+=`<i class="crn ${princessActive()?'':'off'}">${art('congchua')}</i>`;
   if(S.step==='night'&&asleep(p)) h+='<i class="zz">z</i>';
   if(isAfk(p)&&!S.dead[p]) h+='<i class="afkb">AFK</i>';
+  if(S.on&&S.on.matna&&((S.step==='night'&&S.night>=2&&tgt('matna')===p)||(S.step==='morning'&&(S.maskHist||[]).some(x=>x.n===S.night&&x.p===p)))) h+='<i class="mkb">🎭</i>';
   if((S.step==='day'||S.step==='morning')&&p===stoneNow()) h+='<i class="stb">🗿</i>';
   return h; }
 function mnModeHtml(){ const y=S.set==='mythosan';
