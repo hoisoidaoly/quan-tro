@@ -896,18 +896,20 @@ const ROLES={
   thuongnhan:{n:'Sói Thương Nhân',t:'soi',d:'Có 1 Súng và 1 Bình Độc. Đêm 1 dậy cùng bầy, trao Súng cho 1 Sói. Hết ngày 1: Sói giữ Súng bị loại thì được bắn, hết giao dịch; Sói thường khác bị loại thì đêm 2 thu hồi Súng, trao Bình Độc (dùng từ đêm 3); không Sói nào bị loại thì giữ nguyên, không giao dịch thêm; Thương nhân bị loại thì thu hồi cả Súng lẫn Bình Độc, hết giao dịch.'},
   mima:{n:'Mị Ma',t:'soi',d:'1 lần cả ván: đưa 2 số, số đầu là người bị quấy rối, số sau là mục tiêu mới. Kỹ năng đêm đó của người bị quấy rối chuyển sang mục tiêu mới. Quấy rối trúng Dân, hoặc người đó không dùng kỹ năng đêm đó, thì coi như Mị Ma chưa dùng.'},
   quythuat:{n:'Quỷ thuật sư',t:'soi',d:'Mỗi đêm tráo 2 người. Ban ngày 1 trong 2 bị vote loại thì người kia bị loại thay. Không được bỏ trống 2 đêm liền; mỗi người chỉ bị tráo 1 lần cả ván. Trùng cặp với Ảo thuật gia trong cùng đêm thì cả hai triệt tiêu.'},
+  quytuong:{n:'Quỷ tượng',t:'soi',d:'Không dậy cùng bầy Sói. Mỗi đêm dậy riêng soi 1 người, biết rõ chức năng của người đó. Khi Sói thường chết hết, Quỷ tượng được giết người mỗi đêm. Không được nổ.'},
+  canhmo:{n:'Canh mộ',t:'tot',d:'Từ đêm 2, mỗi đêm biết người bị vote loại (treo) ngày hôm trước là Sói hay phe Tốt.'},
   medusa:{n:'Medusa',t:'soi',d:'Mỗi đêm dậy riêng hóa đá 1 người: mất kỹ năng đêm đó, không được vote sáng hôm sau (công bố sau khi vote xong). Hóa đá trúng Sói: Sói đó không thảo luận đêm đó, không được nổ hôm sau. Medusa bị loại ban đêm thì người hóa đá bị loại theo.'},
   soiaothuat:{n:'Sói ảo thuật gia',t:'soi',d:'Giống Ảo thuật gia: dậy trước bầy, hoán đổi số 2 người. Ảo thuật gia đổi trước, Sói ảo thuật đổi sau. Mỗi số chỉ bị đổi 1 lần cả ván.'},
   quanguc:{n:'Quản ngục',t:'soi',d:'Từ đêm 2, mỗi đêm có thể chọn 2 người giao dịch (có thể gồm chính mình). Mỗi người chọn 🤝 Giao dịch hoặc 🔪 Phản bội. Cả hai 🤝: cả hai miễn mọi sát thương đêm đó. Cả hai 🔪: kỹ năng của người này chuyển sang người kia. Một 🤝 một 🔪: người chọn 🤝 bị loại. Quản ngục tự tham gia: chọn giống nhau thì Quản ngục bị loại, khác nhau thì người kia bị loại.'}
 };
-const GOOD=['dan','tientri','phuthuy','thosan','ngoc','baove','kysi','truonglao','thosanquy','phanquan','aothuat','perseus','detmong','cancan','cao','gau','hodiep','conlai'];
-const WOLF=['soi','sansoi','mynhan','phongan','acma','roi','thuongnhan','mima','quythuat','medusa','soiaothuat','quanguc'];
-const PACK_ROLES=WOLF.filter(k=>k!=='roi');
+const GOOD=['dan','tientri','phuthuy','thosan','ngoc','baove','kysi','truonglao','thosanquy','phanquan','aothuat','perseus','detmong','cancan','cao','gau','hodiep','conlai','canhmo'];
+const WOLF=['soi','sansoi','mynhan','phongan','acma','roi','thuongnhan','mima','quythuat','medusa','soiaothuat','quanguc','quytuong'];
+const PACK_ROLES=WOLF.filter(k=>k!=='roi'&&k!=='quytuong'); /* Quỷ tượng không dậy cùng bầy */
 /* Các vai Sói gán số ngay ở bước Bầy Sói (trước Tiên tri) */
 const PACK_LATE=['soi','sansoi','thuongnhan','mynhan','acma','quanguc'];
 /* Thứ tự gọi đêm, khớp timeline các set: ... Bảo vệ → Bầy Sói → Phù thủy → Tiên tri → Sói giao dịch → (vai chỉ gán số đêm 1) → Kỵ sĩ → Thợ săn → Sói Mỹ Nhân → Ác ma (luôn dậy cuối cùng) */
-const ORDER=['phongan','medusa','conlai','aothuat','soiaothuat','quythuat','mima','truonglao','baove','cao','gau','detmong','hodiep','quanguc','PACK','ROI','phuthuy','tientri','TRADE','thosanquy','perseus','ngoc','phanquan','cancan','kysi','thosan','sansoi','mynhan','acma'];
-const EVERY_NIGHT=['phongan','medusa','aothuat','soiaothuat','quythuat','mima','truonglao','baove','detmong','quanguc','PACK','phuthuy','tientri','TRADE','thosanquy','perseus','kysi','thosan','sansoi','acma','mynhan'];
+const ORDER=['phongan','medusa','conlai','aothuat','soiaothuat','quythuat','mima','truonglao','baove','cao','gau','detmong','hodiep','quanguc','PACK','quytuong','ROI','phuthuy','tientri','canhmo','TRADE','thosanquy','perseus','ngoc','phanquan','cancan','kysi','thosan','sansoi','mynhan','acma'];
+const EVERY_NIGHT=['quytuong','canhmo','phongan','medusa','aothuat','soiaothuat','quythuat','mima','truonglao','baove','detmong','quanguc','PACK','phuthuy','tientri','TRADE','thosanquy','perseus','kysi','thosan','sansoi','acma','mynhan'];
 
 /* ===== CÁC SET CÓ SẴN (file SETGAME) =====
    Mỗi set 12 lá. plus=1: trên 13 người thì thêm 1 Sói thường + 1 Kẻ ngốc. Còn thiếu thì điền Dân. */
@@ -923,7 +925,8 @@ const SETS=[
   {id:'aothuat',n:'Ảo thuật gia đối đầu',on:['tientri','phuthuy','thosan','aothuat','soiaothuat'],dan:4,soi:3,plus:1},
   {id:'trung',n:'Cho trứng vào 1 giỏ',on:['tientri','phuthuy','thosan','detmong','quanguc'],dan:4,soi:3,plus:1},
   {id:'vuongquoc',n:'Vương quốc dối lừa',on:['tientri','phuthuy','aothuat','phanquan','quythuat'],dan:4,soi:3,plus:1},
-  {id:'medusa',n:'Medusa - Perseus',on:['tientri','phuthuy','ngoc','perseus','medusa'],dan:4,soi:3}
+  {id:'medusa',n:'Medusa - Perseus',on:['tientri','phuthuy','ngoc','perseus','medusa'],dan:4,soi:3},
+  {id:'quytuong',n:'Quỷ tượng',on:['tientri','phuthuy','thosan','canhmo','quytuong'],dan:4,soi:3,plus:1}
 ];
 const setById=id=>SETS.find(s=>s.id===id);
 function applySet(id){
@@ -1035,7 +1038,19 @@ function blocked(id,p){ /* lý do vai không dùng được chức năng đêm n
 }
 const isAfk=p=>p!=null&&!!(S.afk&&S.afk[p]);
 function canUse(id){const h=aliveHolders(id)[0]; return h!=null&&!blocked(id,h);}
-function packAlive(){return PACK_ROLES.some(r=>aliveHolders(r).length);}
+function packAlive(){return PACK_ROLES.some(r=>aliveHolders(r).length)||qtAlone();}
+/* Quỷ tượng: Sói thường (mọi Sói dậy cùng bầy) chết hết thì Quỷ tượng được giết người */
+function qtAlone(){ return !!(S.on&&S.on.quytuong)&&aliveHolders('quytuong').length>0&&!PACK_ROLES.some(r=>aliveHolders(r).length); }
+function gargResult(p){
+  if(UIB==='seal'||UIB==='stone') return xResult();
+  const r=roleOf(p); if(!r) return `<div class="note">Số ${p} chưa được gán vai (vai đó chưa được gọi đêm nay). Quản trò xem bài để báo.</div>`;
+  return `<div class="result"><div class="r ${isWolfCard(p)?'soi':'tot'}">${esc(roleLabel(p))}</div><small>Số ${p}${pname(p)?' · '+esc(pname(p)):''} · ra hiệu cho Quỷ tượng biết chức năng (chỉ vào thẻ vai / nói nhỏ).</small></div>`; }
+function graveInfo(){ const h=S.hang; return h&&h.n===S.night-1?h.p:null; }
+function graveResult(){
+  if(S.night<2) return '<div class="note">Từ <b>đêm 2</b> Canh mộ mới có kết quả. Đêm 1 chỉ gán số, gọi dậy rồi mời ngủ.</div>';
+  if(UIB==='seal'||UIB==='stone') return xResult();
+  const p=graveInfo(); if(p==null) return '<div class="result"><div class="r">Không ai bị treo</div><small>Hôm qua không ai bị vote loại. Ra hiệu ✋ (không có kết quả).</small></div>';
+  const w=isWolfSide(p); return `<div class="result"><div class="r ${w?'soi':'tot'}">${w?'Phe Sói 🐺':'Phe Tốt 👍'}</div><small>Người bị treo hôm qua: số ${p}${pname(p)?' · '+esc(pname(p)):''} (${esc(roleLabel(p))}). Ra dấu ${w?'🐺':'👍'} cho Canh mộ.</small></div>`; }
 /* Phong ấn trúng Sói: đêm đó bầy không được cắn */
 function wolfSealed(){ if(!canUse('phongan')) return null; const s=act('phongan'); return s!=null&&isWolfCard(s)?s:null; }
 
@@ -1285,6 +1300,8 @@ function nightActs(){
     const t=T(id), c=S.cur[id]||{}; let a=null;
     switch(id){
       case 'phongan': a=c.none?'không phong ấn ai':t!=null&&'phong ấn '+sw(t); break;
+      case 'quytuong': a=t!=null&&'soi '+sw(t)+(roleOf(eff(t))?': là '+roleLabel(eff(t)):''); break;
+      case 'canhmo': a=S.night>=2&&(graveInfo()!=null?'xem người bị treo số '+graveInfo()+': '+(isWolfSide(graveInfo())?'Sói':'phe Tốt'):'hôm qua không ai bị treo'); break;
       case 'medusa': a=t!=null&&'hóa đá '+sw(t)+(stoneImmune(act('medusa'))?' (là Perseus: miễn nhiễm, không có tác dụng)':''); break;
       case 'conlai': a=t!=null&&'chọn hình mẫu là số '+t; break;
       case 'aothuat': a=c.t&&c.t.length===2&&'hoán đổi số '+c.t.join(' và ')+(swapA()?'':' (bị triệt tiêu)'); break;
@@ -1537,7 +1554,7 @@ function vAdvance(){
     if(v.st==='xvote'){ v.pk=r.tie; v.st='xpk'; v.xres={t:`Hòa phiếu giữa số ${r.tie.join(', ')}: những người này PK nói tiếp, rồi vote lại.`}; vRes('Hòa phiếu: số '+r.tie.join(', ')+' PK'); return; }
     tlAdd(ph,{t:'Vote loại vẫn hòa sau PK: không ai bị loại',ok:1}); v.xres={calm:1,t:'Vẫn hòa sau PK: không ai bị loại, bình an vào đêm.'}; vRes('Vẫn hòa: bình an'); v.st='done'; return; }
 }
-function vBoomOk(p){ const r=roleOf(p); return !isAfk(p)&&vOnTable().includes(p)&&alive(p)&&isWolfCard(p)&&p!==stoneNow()&&r!=='mynhan'; }
+function vBoomOk(p){ const r=roleOf(p); return !isAfk(p)&&vOnTable().includes(p)&&alive(p)&&isWolfCard(p)&&p!==stoneNow()&&r!=='mynhan'&&r!=='quytuong'; }
 function vBoom(p){
   const v=VL(), ph='Ngày '+S.night, inMayor=v.st[0]==='m';
   v.boomP=p; if(S.step==='day'){ if(!S.dayPick.includes(p)) S.dayPick.push(p); S.dayWhy[p]='Tự nổ'; }
@@ -1884,7 +1901,12 @@ function actionBlock(id){
     case 'detmong': return pick(id,1,{title:'Ru ngủ ai?',labelFn:p=>p===S.dmLast?'đêm trước':null})+(S.dmLast!=null?`<div class="note">Đêm trước ru ngủ số ${S.dmLast}. Chọn lại số ${S.dmLast} thì người đó bị loại.</div>`:'');
     case 'quanguc': return jailBlock();
     case 'tientri': return pick(id,1,{title:'Soi ai?'})+(t0!=null?seerResult(act('tientri')):'');
-    case 'PACK': { const sl=wolfSealed(), noBite=PACK_ROLES.filter(r=>r==='mynhan'||r==='acma').flatMap(holders);
+    case 'quytuong': { const me=aliveHolders('quytuong')[0], t1=tgt('quytuong');
+      return (qtAlone()?'<div class="note">Sói thường đã chết hết: Quỷ tượng vừa giết người ở bước Bầy Sói, giờ soi tiếp.</div>':'')+pick(id,1,{title:'Quỷ tượng soi ai?',sub:'biết rõ chức năng',dis:p=>p===me?'self':null})+(t1!=null?gargResult(act('quytuong')):''); }
+    case 'canhmo': return graveResult();
+    case 'PACK': { if(qtAlone()){ const q=aliveHolders('quytuong')[0];
+        return `<div class="note">Sói thường đã chết hết. <b>Gọi Quỷ tượng (số ${q})</b> dậy: đêm nay Quỷ tượng giết người.</div>`+pick(id,1,{title:'Quỷ tượng giết ai?',dis:p=>p===q?'self':null,none:'🚫 Quỷ tượng không giết ai'}); }
+      const sl=wolfSealed(), noBite=PACK_ROLES.filter(r=>r==='mynhan'||r==='acma').flatMap(holders);
       return specialWolvesNote()+tradeBlock()+puppetBlock()+(!packAlive()?'':sl!=null?`<div class="note bad">Phong ấn trúng Sói số ${sl}: đêm nay bầy <b>không được cắn</b>.</div>`:pick(id,1,{title:'Bầy Sói cắn ai?',sub:'không thống nhất thì bấm Không cắn',dis:p=>noBite.includes(p)?'taken':null})+(noBite.length?'<div class="note">Sói Mỹ Nhân và Ác Ma không bị bầy cắn.</div>':'')); }
     case 'TRADE': return tradeStep();
     case 'mynhan': return pick(id,1,{title:'Mê hoặc ai?',dis:p=>p===S.charm?'lock':null})+(S.charm!=null?`<div class="note">Đang mê hoặc số ${S.charm} (từ đêm trước), đêm nay không được chọn lại.</div>`:'');
@@ -2336,6 +2358,7 @@ function advance(){
     if(S.night===1&&S.on.thuongnhan&&S.trade.phase==='gun') tradeDay1();
     if(S.dayPick.length) S.log.push('Ngày '+S.night+': bị loại '+S.dayPick.slice().sort((a,b)=>a-b).join(', '));
     applyMayor(); S.win=checkWin(); if(S.win){ S.step='end'; window.scrollTo(0,0); return; }
+    S.hang={n:S.night,p:S.v&&S.v.xout!=null&&S.dayPick.includes(S.v.xout)?S.v.xout:null};
     S.night++; S.idx=0; S.cur={}; S.step='night'; window.scrollTo(0,0); }
 }
 window.addEventListener('beforeunload',e=>{ if(S.step!=='players'){ e.preventDefault(); e.returnValue=''; } });
@@ -2346,7 +2369,7 @@ try{ const saved=JSON.parse(localStorage.getItem(NAMES_KEY)||'{}'); if(saved&&ty
 /* ================= GIAO DIỆN MỚI (v3): mỗi màn một việc =================
    Giữ nguyên toàn bộ phần tính luật ở trên; phần dưới chỉ đổi cách hiển thị và thao tác. */
 let menuOpen=false, ruleOpen=false, autoT=null, toastT=null, tmKey=null, evSheet=null;
-const TASK={phongan:'Phong ấn ai?',medusa:'Hóa đá ai?',conlai:'Con lai chọn hình mẫu',aothuat:'Hoán đổi số 2 người',soiaothuat:'Hoán đổi số 2 người',quythuat:'Tráo 2 người',
+const TASK={quytuong:'Quỷ tượng soi ai?',canhmo:'Canh mộ',phongan:'Phong ấn ai?',medusa:'Hóa đá ai?',conlai:'Con lai chọn hình mẫu',aothuat:'Hoán đổi số 2 người',soiaothuat:'Hoán đổi số 2 người',quythuat:'Tráo 2 người',
   mima:'Mị Ma quấy rối',truonglao:'Cấm ngôn ai?',baove:'Bảo vệ ai?',cao:'Cáo',gau:'Gấu',detmong:'Ru ngủ ai?',hodiep:'Hồ điệp',quanguc:'Quản ngục giao dịch',
   PACK:'Bầy Sói cắn ai?',ROI:'Chọn Con Rối',phuthuy:'Phù thủy dùng bình',tientri:'Tiên tri soi ai?',TRADE:'Sói giao dịch',thosanquy:'Thợ săn quỷ săn ai?',
   perseus:'Perseus đâm ai?',ngoc:'Kẻ ngốc',phanquan:'Phán quan',cancan:'Cán cân',kysi:'Kỵ sĩ',thosan:'Báo khai súng cho Thợ săn',sansoi:'Báo khai súng cho Sói săn',
@@ -2380,7 +2403,7 @@ function renderNight(){
   $('#phase').textContent='Đêm '+S.night+' · '+stepName(id);
   const isPack=id==='PACK', isRoi=id==='ROI', isTrade=id==='TRADE';
   const side=isPack||isRoi||isTrade?'soi':ROLES[id].t;
-  let body='', ok=true, hint=''; UIB=null; let task=TASK[id]||stepName(id);
+  let body='', ok=true, hint=''; UIB=null; let task=TASK[id]||stepName(id); if(isPack&&qtAlone()) task='Quỷ tượng giết ai?';
   const asg=S.night===1?assignRoles(id).find(r=>holders(r).length<need(r)):null;
   if(asg){ const q=need(asg), cur=holders(asg); task='Chọn '+ROLES[asg].n; ok=false; hint=q>1?`Chạm ${q} ghế đang giơ tay (${cur.length}/${q})`:'Chạm ghế người đang giơ tay'; body=asgRing(asg,cur,q); }
   else {
@@ -2889,6 +2912,8 @@ const PD={
   thuongnhan:'Có 1 Súng và 1 Bình Độc để giao cho đồng đội. Đêm 1 dậy cùng bầy, trao Súng cho 1 Sói. Sói giữ Súng bị loại thì được bắn 1 người. Nếu hết ngày 1 có Sói khác (không giữ Súng) bị loại thì đêm 2 thu hồi Súng và trao Bình Độc, dùng được từ đêm 3. Không Sói nào bị loại trong ngày 1 thì Súng giữ nguyên. Thương nhân bị loại (bất kỳ lúc nào) thì thu hồi cả Súng lẫn Bình Độc: Sói đang giữ không dùng được nữa, hết giao dịch.',
   mima:'1 lần cả ván: chọn 2 người, kỹ năng đêm đó của người thứ nhất bị chuyển sang người thứ hai. Quấy rối trúng Dân, hoặc người đó không dùng kỹ năng đêm đó, thì được dùng lại.',
   quythuat:'Mỗi đêm tráo 2 người: ban ngày 1 trong 2 người bị vote loại thì người kia bị loại thay. Không được bỏ trống 2 đêm liền, mỗi người chỉ bị tráo 1 lần cả ván. Trùng cặp với Ảo thuật gia cùng đêm thì cả hai mất tác dụng.',
+  quytuong:'Không dậy cùng bầy Sói. Mỗi đêm dậy riêng soi 1 người và biết rõ chức năng của người đó. Khi các Sói thường chết hết, Quỷ tượng được giết 1 người mỗi đêm. Không được nổ.',
+  canhmo:'Từ đêm 2, mỗi đêm biết người bị vote loại (treo) ngày hôm trước là Sói hay phe Tốt.',
   medusa:'Mỗi đêm dậy riêng hóa đá 1 người: người đó mất kỹ năng đêm đó và không được vote ngày hôm sau. Hóa đá trúng Sói thì Sói đó không được thảo luận đêm đó và không được nổ hôm sau. Medusa bị loại ban đêm thì người đang bị hóa đá bị loại theo.',
   soiaothuat:'Dậy trước bầy, hoán đổi số của 2 người như Ảo thuật gia (Ảo thuật gia đổi trước, Sói ảo thuật đổi sau). Mỗi số chỉ bị đổi 1 lần cả ván.',
   quanguc:'Từ đêm 2, mỗi đêm có thể chọn 2 người (có thể gồm chính mình) để giao dịch. Mỗi người chọn 🤝 Giao dịch hoặc 🔪 Phản bội. Cả hai 🤝: cả hai không bị sát thương đêm đó. Cả hai 🔪: kỹ năng của 2 người đổi cho nhau. Một 🤝 một 🔪: người chọn 🤝 bị loại. Quản ngục tự tham gia: chọn giống nhau thì Quản ngục bị loại, khác nhau thì người kia bị loại.'
