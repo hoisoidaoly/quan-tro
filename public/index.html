@@ -926,7 +926,8 @@ const SETS=[
   {id:'trung',n:'Cho trứng vào 1 giỏ',on:['tientri','phuthuy','thosan','detmong','quanguc'],dan:4,soi:3,plus:1},
   {id:'vuongquoc',n:'Vương quốc dối lừa',on:['tientri','phuthuy','aothuat','phanquan','quythuat'],dan:4,soi:3,plus:1},
   {id:'medusa',n:'Medusa - Perseus',on:['tientri','phuthuy','ngoc','perseus','medusa'],dan:4,soi:3},
-  {id:'quytuong',n:'Quỷ tượng',on:['tientri','phuthuy','thosan','canhmo','quytuong'],dan:4,soi:3,plus:1}
+  {id:'quytuong',n:'Quỷ tượng',on:['tientri','phuthuy','thosan','canhmo','quytuong'],dan:4,soi:3,plus:1},
+  {id:'soisan',n:'Sói Săn',on:['baove','phuthuy','tientri','thosan','sansoi'],dan:4,soi:3,ngoc15:1}
 ];
 const setById=id=>SETS.find(s=>s.id===id);
 function applySet(id){
@@ -934,6 +935,7 @@ function applySet(id){
   S.on={}; s.on.forEach(k=>S.on[k]=true); S.cnt={dan:s.dan,soi:s.soi};
   S.setPlus=0;
   if(s.plus&&S.n>=14){ S.cnt.soi++; if(S.on.ngoc) S.cnt.dan++; else S.on.ngoc=true; S.setPlus=1; }
+  if(s.ngoc15&&S.n>=15){ S.on.ngoc=true; S.setPlus=2; } /* set Sói Săn: 15 người thêm Kẻ ngốc */
   S.cnt.dan=Math.max(0,S.n-(totalCards()-S.cnt.dan));
   S.set=id; S.setEdited=0; S.rules=Object.assign({mnLast:'drag'},s.rules||{});
 }
@@ -1712,7 +1714,7 @@ function render(){ try{ tradeLost(); }catch(e){} try{ const ab=document.getEleme
       const ctl=r.count?`<div class="step"><button data-a="cnt" data-id="${id}" data-v="-1" aria-label="Bớt ${r.n}">−</button><button data-a="cnt" data-id="${id}" data-v="1" aria-label="Thêm ${r.n}">+</button></div>`:'';
       return `<div class="ritem rcard ${side} ${isOn?'on':'off'} ${openInfo[id]?'open':''}" data-k="${esc(normVN(r.n+' '+r.d))}" ${r.count?'':`data-a="tog" data-id="${id}" role="switch" aria-checked="${!!S.on[id]}" aria-label="${r.n}"`}><i class="dot"></i>${r.count&&S.cnt[id]?`<b class="n">${S.cnt[id]}</b>`:''}<div class="face">${art(id)}<span class="nm">${r.n}</span>${tags}</div>${ctl}<button class="qi" data-a="info" data-id="${id}">${openInfo[id]?'Ẩn mô tả':'Mô tả'}</button><div class="ds">${esc(r.d)}</div></div>`;};
     const cur=setById(S.set);
-    const setInfo=cur?`Đang dùng set <b>${esc(setLabel())}</b>${S.setPlus?' · đã thêm 1 Sói thường + 1 Kẻ ngốc vì trên 13 người':''}${S.n<12?' · set thiết kế cho 12 lá trở lên':''}.`:'Chạm 1 set để bật đúng các vai của set, hoặc tự bật vai bên dưới.';
+    const setInfo=cur?`Đang dùng set <b>${esc(setLabel())}</b>${S.setPlus===2?' · đã thêm 1 Kẻ ngốc vì đủ 15 người':S.setPlus?' · đã thêm 1 Sói thường + 1 Kẻ ngốc vì trên 13 người':''}${S.n<12?' · set thiết kế cho 12 lá trở lên':''}.`:'Chạm 1 set để bật đúng các vai của set, hoặc tự bật vai bên dưới.';
     const rules=on('mynhan')&&!['mykysi','mythosan'].includes(S.set)?`<div class="rulebox"><h3>Luật Sói Mỹ Nhân khi là Sói cuối cùng bị loại</h3><div class="seg2">
       <button class="${S.rules.mnLast!=='nodrag'?'on':''}" data-a="rule" data-id="mnLast" data-v="drag">Vẫn kéo theo<small>Kéo theo Thần/Dân cuối thì Sói thắng</small></button>
       <button class="${S.rules.mnLast==='nodrag'?'on':''}" data-a="rule" data-id="mnLast" data-v="nodrag">Không kéo ai<small>Set Sói Mỹ - Thợ săn</small></button></div></div>`:'';
