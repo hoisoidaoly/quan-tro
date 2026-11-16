@@ -13,13 +13,16 @@
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'content-type,x-key'};
 const json=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{...CORS,'content-type':'application/json'}});
 
+/* dấu vân tay của một ván (không đổi khi chấm MVP/SVP, khác nhau giữa hai ván khác nhau); 'when' đổi theo từng lần gửi nên không dùng */
+const gid=x=>JSON.stringify([x.n,x.nights,x.win&&x.win.name,x.set,(x.rows||[]).map(r=>[r.p,r.id,r.alive,r.fate])]);
+
 export class Room {
   constructor(state){ this.state=state; }
   broadcast(obj){ const s=JSON.stringify(obj), socks=this.state.getWebSockets(); for(const ws of socks){ try{ ws.send(s); }catch(e){} } return socks.length; }
   async checkKey(req,minLen){ const key=req.headers.get('x-key')||''; if(key.length<minLen) return 'missing key';
     const k0=await this.state.storage.get('key'); if(k0&&k0!==key) return 'forbidden'; if(!k0) await this.state.storage.put('key',key); return null; }
   async full(){ const st=await this.state.storage.get('state')||null; const m=await this.state.storage.list({prefix:'av:'}); const av={};
-    for(const [k,v] of m) av[k.slice(3)]=v; return {type:'full',state:st,avatars:av,summary:await this.state.storage.get('sum')||null,game:await this.state.storage.get('game')||null}; }
+    for(const [k,v] of m) av[k.slice(3)]=v; return {type:'full',state:st,avatars:av,summary:await this.state.storage.get('sum')||null,prev:!!(await this.state.storage.get('sumprev')),game:await this.state.storage.get('game')||null}; }
   async fetch(req){
     const url=new URL(req.url), stage=url.pathname.startsWith('/api/stage/');
     if(req.headers.get('Upgrade')==='websocket'){
@@ -48,6 +51,14 @@ export class Room {
           else if(body.src===null) await this.state.storage.delete('sr:'+n); }
         return json({ok:true,viewers:this.broadcast({type:'avatar',n,url:u||null})}); }
       if(body&&body.op==='auth') return json({ok:true});
+      /* trang điều khiển: khôi phục tổng kết ván trước (chỉ khi đang không có bản nào, không tự hiện lên stream) */
+      if(body&&body.op==='restoreSum'){
+        const pv=await this.state.storage.get('sumprev'); if(!pv) return json({ok:false,error:'no prev'},404);
+        if(await this.state.storage.get('sum')) return json({ok:false,error:'already'},409);
+        await this.state.storage.put('sum',pv); await this.state.storage.put('sumr',1); await this.state.storage.delete('sumprev');
+        const st2=await this.state.storage.get('state'); if(st2){ st2.set=Object.assign({},st2.set,{sum:0}); st2.at=Date.now(); await this.state.storage.put('state',st2); this.broadcast({type:'state',state:st2}); } /* khôi phục xong vẫn ẩn, quản trò tự bấm Hiện */
+        this.broadcast({type:'summary',summary:pv,prev:false});
+        return json({ok:true}); }
       /* web quản trò gửi riêng phần chết / Thị trưởng / tên, không đụng ảnh, POV, icon vai */
       if(body&&body.op==='patch'){
         const st=await this.state.storage.get('state')||{players:[],set:{dead:'gray',hide:0}};
@@ -55,10 +66,20 @@ export class Room {
         if(body.dead&&typeof body.dead==='object') for(const [k,v] of Object.entries(body.dead)){ const n=+k; if(n>=1&&n<=12) st.players[n-1].dead=v?1:0; }
         if(st.speak&&st.players[st.speak-1]&&st.players[st.speak-1].dead) st.speak=null; /* chết thì tắt phát biểu */
         if(Array.isArray(body.cand)) st.cand=body.cand.map(Number).filter(n=>n>=1&&n<=12).slice(0,12); /* người lên giàn tranh cử */
-        if('summary' in body){ /* bảng tổng kết ván: lưu riêng, gửi riêng */
+        if('summary' in body){ /* bảng tổng kết ván: lưu riêng, gửi riêng. Giữ lại đúng 1 ván gần nhất ('sumprev') phòng bấm nhầm Ván mới */
           const sm=body.summary; if(sm&&JSON.stringify(sm).length>120000) return json({ok:false,error:'summary too big'},400);
-          if(sm) await this.state.storage.put('sum',sm); else { await this.state.storage.delete('sum'); st.set=Object.assign({},st.set,{sum:0}); }
-          this.broadcast({type:'summary',summary:sm||null}); }
+          const old=await this.state.storage.get('sum'), restored=await this.state.storage.get('sumr');
+          if(sm){
+            const same=old&&gid(old)===gid(sm);
+            if(old&&!same) await this.state.storage.put('sumprev',old); /* sang ván khác mà chưa bị xóa: bản cũ thành bản lưu */
+            else if(!old) await this.state.storage.delete('sumprev'); /* có tổng kết ván tiếp theo: bỏ ván cũ */
+            await this.state.storage.delete('sumr'); /* có tổng kết mới từ web: hết chế độ giữ bản khôi phục */
+            await this.state.storage.put('sum',sm);
+          } else if(old&&!restored){ /* Ván mới: bảng đang hiện bị xóa, nhưng cất lại để khôi phục */
+            await this.state.storage.put('sumprev',old); await this.state.storage.delete('sum'); st.set=Object.assign({},st.set,{sum:0});
+          } else if(!old){ st.set=Object.assign({},st.set,{sum:0}); }
+          /* bản vừa khôi phục (sumr) thì bỏ qua lệnh xóa từ web quản trò, giữ đến khi có tổng kết ván mới */
+          this.broadcast({type:'summary',summary:await this.state.storage.get('sum')||null,prev:!!(await this.state.storage.get('sumprev'))}); }
         if('game' in body){ /* thông tin ván cho khung idle của overlay kiểm phiếu: lưu riêng, chỉ gửi khi đổi */
           const g=body.game, gs=g?JSON.stringify(g):''; if(gs.length>80000) return json({ok:false,error:'game too big'},400);
           const g0=await this.state.storage.get('game'); if(gs!==(g0?JSON.stringify(g0):'')){
@@ -69,6 +90,7 @@ export class Room {
         st.at=Date.now(); await this.state.storage.put('state',st);
         return json({ok:true,viewers:this.broadcast({type:'state',state:st})}); }
       if(!body||!body.state||!Array.isArray(body.state.players)) return json({ok:false,error:'bad state'},400);
+      if(!(await this.state.storage.get('sum'))){ body.state.set=Object.assign({},body.state.set,{sum:0}); } /* không có tổng kết thì không để cờ hiện tổng kết bật nhầm (máy điều khiển giữ state cũ) */
       body.state.at=Date.now(); await this.state.storage.put('state',body.state);
       return json({ok:true,viewers:this.broadcast({type:'state',state:body.state})});
     }

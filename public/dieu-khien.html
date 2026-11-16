@@ -133,6 +133,7 @@ details.more summary{cursor:pointer;color:var(--sky);font-size:13px;margin:12px 
     <h1><small>Thị Trấn Đạo Lý · phòng <span id="room"></span></small>Điều khiển overlay</h1>
     <span class="st" id="st"><i></i><span>Đang kết nối</span></span>
     <span class="tabs"><button data-a="tab" data-v="pl">12 người chơi</button><button data-a="tab" data-v="vo">Khung kiểm phiếu</button></span>
+    <button class="btn" data-a="vp" id="vpbtn" disabled title="Bật/tắt bảng kiểm phiếu trên stream. Không bấm thì sau 2 phút tự chuyển sang khung giải thích">Kiểm phiếu: chưa có</button>
     <span class="pl-only" style="display:contents">
     <button class="btn" data-a="names">Nhập tên</button>
     <button class="btn" data-a="bulk">Nhập nhiều ảnh</button>
@@ -141,6 +142,7 @@ details.more summary{cursor:pointer;color:var(--sky);font-size:13px;margin:12px 
     <button class="btn" data-a="hide" id="hidebtn">Ẩn overlay</button>
     <span class="seg" id="sumpg" title="Trang tổng kết"><button data-a="sump" data-v="bai">Bài từng số</button><button data-a="sump" data-v="tl">Diễn biến</button></span>
     <button class="btn" data-a="sum" id="sumbtn" title="Bảng tổng kết ván từ web quản trò, hiện giữa màn hình">Tổng kết ván</button>
+    <button class="btn" data-a="sumrest" id="sumrest" hidden title="Lỡ bấm Ván mới? Lấy lại bảng tổng kết của ván vừa rồi">↺ Khôi phục tổng kết ván trước</button>
     <button class="btn gold" data-a="newgame">Ván mới</button>
     </span>
     <button class="btn" data-a="obs">Link OBS</button>
@@ -148,7 +150,8 @@ details.more summary{cursor:pointer;color:var(--sky);font-size:13px;margin:12px 
   <main><section id="tab-vo" hidden><div class="vo">
     <div class="box"><h2>Xem trước trên stream<button class="btn" data-a="vohide" id="vohide">Ẩn toàn bộ khung</button></h2>
       <div class="pvw" id="pvw"><iframe id="pvf" title="Xem trước khung kiểm phiếu"></iframe></div>
-      <p class="note">Khung xem trước giống hệt trên OBS (nền tối thay cho camera). Kéo thanh trượt là khung trên stream đổi ngay.</p></div>
+      <p class="note">Khung xem trước giống hệt trên OBS (nền tối thay cho camera). Kéo thanh trượt là khung trên stream đổi ngay.</p>
+      <p class="note">Nút <b>Kiểm phiếu</b> ở thanh trên: bật/tắt bảng kiểm phiếu. Không bấm thì sau 2 phút bảng tự nhường chỗ cho khung giải thích. Khi bảng <b>Tổng kết ván</b> đang hiện, cả khung này tự ẩn.</p></div>
     <div class="box"><h2>Vị trí và cỡ</h2>
       <div class="sl"><label for="v-sc">Cỡ khung</label><input type="range" id="v-sc" data-vo="sc" min="50" max="160" step="1"><b id="v-sc-v"></b></div>
       <div class="sl"><label for="v-x">Ngang</label><input type="range" id="v-x" data-vo="x" min="-700" max="700" step="2"><b id="v-x-v"></b></div>
@@ -173,7 +176,7 @@ const $=s=>document.querySelector(s), esc=s=>String(s||'').replace(/[&<>"]/g,c=>
 const LS={get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }};
 let PIN=LS.get('qtdl_pin_'+ROOM)||'', ROLES=[], RM={};
 let S={players:Array.from({length:12},()=>({name:'',dead:0,pov:0,roles:[],fs:100})),set:{dead:'gray',hide:0,fs:100},vo:{sc:100,x:0,y:72,ih:200,hide:0,sp:null},mayor:null,speak:null}, AV={};
-let saveT=null, picking=null, editing=null, SUM=null, GAME=null, TAB=LS.get('qtdl_tab')==='vo'?'vo':'pl';
+let saveT=null, picking=null, editing=null, SUM=null, PREV=false, GAME=null, TAB=LS.get('qtdl_tab')==='vo'?'vo':'pl';
 const VODEF={sc:100,x:0,y:72,ih:200,hide:0,sp:null};
 $('#room').textContent=ROOM; $('#groom').textContent=ROOM;
 function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),1800); }
@@ -185,8 +188,9 @@ $('#go').onclick=()=>{ const p=$('#pin').value.trim(); if(p.length<4){ $('#gerr'
 $('#pin').onkeydown=e=>{ if(e.key==='Enter') $('#go').click(); };
 async function start(){ $('#gate').hidden=true; $('#app').hidden=false;
   try{ ROLES=await (await fetch(BASE+'/roles/roles.json')).json(); ROLES.forEach(r=>RM[r.id]=r); }catch(e){}
-  try{ const f=await (await fetch(BASE+'/api/stage/'+ROOM)).json(); if(f.state) S=norm(f.state); AV=f.avatars||{}; SUM=f.summary||null; GAME=f.game||null; }catch(e){}
-  render(); connect(); }
+  try{ const f=await (await fetch(BASE+'/api/stage/'+ROOM)).json(); if(f.state) S=norm(f.state); AV=f.avatars||{}; SUM=f.summary||null; PREV=!!f.prev; GAME=f.game||null; }catch(e){}
+  VP.n=S.vo.bd?S.vo.bd.n:null; VP.init=true;
+  render(); connect(); connectRoom(); }
 function norm(s){ s.players=Array.from({length:12},(_,i)=>Object.assign({name:'',dead:0,pov:0,roles:[],fs:100},(s.players||[])[i]||{})); s.set=Object.assign({dead:'gray',hide:0,fs:100},s.set||{}); delete s.set.lay; s.vo=Object.assign({},VODEF,s.vo||{}); if(s.mayor===undefined) s.mayor=null; if(s.speak===undefined||(s.speak&&s.players[s.speak-1].dead)) s.speak=null; return s; }
 /* ---------- lưu ---------- */
 let lastLocal=0;
@@ -216,6 +220,7 @@ function render(){ spbar(); const g=$('#grid'), f=document.activeElement, fi=f&&
   $('#sumpg').hidden=!SUM; document.querySelectorAll('[data-a="sump"]').forEach(x=>x.classList.toggle('on',x.dataset.v===(S.set.sump==='tl'?'tl':'bai')));
   sb.textContent=!SUM?'Tổng kết: chưa có':S.set.sum?'Ẩn tổng kết ván':'Hiện tổng kết ván';
   sb.title=SUM?('Ván lúc '+(SUM.when||'')+' · '+(SUM.win&&SUM.win.name||'')):'Kết thúc ván trên web quản trò (đã bật Overlay OBS) để có bảng tổng kết';
+  $('#sumrest').hidden=!(PREV&&!SUM);
   renderVO(); renderSheet(); }
 function renderSheet(){ const sh=$('#sheet'); if(!picking){ sh.innerHTML=''; return; }
   if(picking.k==='roles'){ const i=picking.i, p=S.players[i], grp=t=>ROLES.filter(r=>r.t===t).map(r=>`<button class="${(p.roles||[]).includes(r.id)?'on':''}" data-a="trole" data-v="${r.id}"><img src="${BASE}/roles/${r.f}" alt="">${esc(r.n)}</button>`).join('');
@@ -326,6 +331,8 @@ document.addEventListener('click',e=>{ const b=e.target.closest('[data-a]'); if(
   if(a==='dmode'){ S.set.dead=b.dataset.v; render(); save(1); return; }
   if(a==='sump'){ S.set.sump=b.dataset.v; render(); save(1); return; }
   if(a==='sum'){ if(!SUM) return; S.set.sum=S.set.sum?0:1; render(); save(1); return; }
+  if(a==='vp'){ if(!VP.on) return; const want=!vpVisible(), n=Date.now(); VP.man=want?1:0; VP.n=n; voSet({bd:{on:want?1:0,n,at:vpAt}},1); vpUpdate(); toast(want?'Bật bảng kiểm phiếu':'Tắt bảng kiểm phiếu, hiện khung giải thích'); return; }
+  if(a==='sumrest'){ api('',{op:'restoreSum'}).then(()=>toast('Đã khôi phục. Bấm "Hiện tổng kết ván" để hiện lên stream'),er=>toast(/404/.test(er.message)?'Không có tổng kết ván trước để khôi phục':/409/.test(er.message)?'Đang có tổng kết ván, không cần khôi phục':er.message)); return; }
   if(a==='hide'){ S.set.hide=S.set.hide?0:1; render(); save(1); return; }
   if(a==='newgame'){ if(!b.dataset.sure){ b.dataset.sure=1; b.textContent='Chạm lần nữa để xác nhận'; setTimeout(()=>{ delete b.dataset.sure; b.textContent='Ván mới'; },3000); return; }
     S.players.forEach(p=>{ p.dead=0; p.pov=0; p.roles=[]; }); S.mayor=null; S.speak=null; S.cand=[]; S.set.sum=0; delete b.dataset.sure; render(); save(1); toast('Ván mới: đã bỏ dấu chết, POV và icon vai'); return; }
@@ -370,6 +377,27 @@ addEventListener('resize',pvSize);
 document.addEventListener('input',e=>{ const k=e.target.dataset&&e.target.dataset.vo; if(!k) return; voSet({[k]:+e.target.value}); });
 document.addEventListener('change',e=>{ const id=e.target.dataset&&e.target.dataset.sp; if(!id) return; let ids=[...spIds()];
   ids=e.target.checked?(ids.includes(id)?ids:[...ids,id]):ids.filter(x=>x!==id); voSet({sp:{key:spKey(),ids}},1); });
+/* ---------- bật/tắt bảng kiểm phiếu: cùng quy tắc với overlay (hiện 2 phút rồi nhường khung giải thích; bấm tay thì giữ theo tay) ---------- */
+const VPSEC=120, VP={on:false,t0:0,man:null,n:null,init:false}; let vpSeen=0, vpAt=0;
+const vpVisible=()=>VP.on&&(VP.man!=null?!!VP.man:Date.now()-VP.t0<VPSEC*1000);
+function vpBd(bd){ if(VP.init&&bd&&bd.n!==undefined&&bd.n!==VP.n){ VP.n=bd.n; VP.man=bd.on?1:0; vpUpdate(); } }
+let vpCov=false;
+function vpCheckCov(){ const c=!!(S.set.sum&&SUM); if(vpCov&&!c){ VP.on=false; } vpCov=c; } /* tắt tổng kết thì overlay bỏ bảng kiểm phiếu cũ, nút cũng về "chưa có" */
+function vpUpdate(){ vpCheckCov(); const b=$('#vpbtn'); if(!b) return;
+  if(!VP.on){ b.textContent='Kiểm phiếu: chưa có'; b.disabled=true; b.classList.remove('gold'); return; }
+  const v=vpVisible(); b.disabled=false; b.classList.toggle('gold',v);
+  let t='Kiểm phiếu: '+(v?'BẬT':'TẮT'); if(v&&VP.man==null){ const r=Math.max(0,Math.ceil((VP.t0+VPSEC*1000-Date.now())/1000)); t+=' · tự đổi sau '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0'); }
+  b.textContent=t; }
+setInterval(vpUpdate,1000);
+let wsr=null, triesR=0;
+function connectRoom(){ const base=(BASE||location.origin).replace(/^http/,'ws');
+  wsr=new WebSocket(base+'/api/room/'+ROOM+'/ws');
+  let pr=null; wsr.onopen=()=>{ triesR=0; clearInterval(pr); pr=setInterval(()=>{ try{ wsr.send('ping'); }catch(e){} },25000); };
+  wsr.onmessage=e=>{ if(e.data==='pong') return; let m; try{ m=JSON.parse(e.data); }catch(er){ return; } const first=!vpSeen; vpSeen=1;
+    if(m.type==='show'){ if(m.at&&m.at===vpAt) return; vpAt=m.at||0; if(first&&m.at&&Date.now()-m.at>3*3600000) return;
+      VP.on=true; VP.man=null; VP.t0=first&&m.at?m.at:Date.now(); const bd=S.vo&&S.vo.bd; if(bd&&bd.at&&bd.at===m.at) VP.man=bd.on?1:0; vpUpdate(); }
+    else if(m.type==='hide'){ VP.on=false; vpUpdate(); } };
+  wsr.onclose=()=>{ clearInterval(pr); setTimeout(connectRoom,Math.min(15000,1000*2**triesR++)); }; }
 /* ---------- đồng bộ với các máy điều khiển khác ---------- */
 let ws=null, tries=0, pingT=null;
 function setSt(on){ $('#st').classList.toggle('on',on); $('#st span').textContent=on?'Đã kết nối':'Mất kết nối, đang thử lại'; }
@@ -377,10 +405,10 @@ function connect(){ const base=(BASE||location.origin).replace(/^http/,'ws');
   ws=new WebSocket(base+'/api/stage/'+ROOM+'/ws');
   ws.onopen=()=>{ tries=0; setSt(true); clearInterval(pingT); pingT=setInterval(()=>{ try{ ws.send('ping'); }catch(e){} },25000); };
   ws.onmessage=e=>{ if(e.data==='pong') return; let m; try{ m=JSON.parse(e.data); }catch(er){ return; }
-    if(m.type==='state'){ if(!saveT&&Date.now()-lastLocal>1500){ S=norm(m.state); render(); } } /* vừa sửa trên máy này thì giữ bản của máy này */
-    else if(m.type==='full'){ SUM=m.summary||null; GAME=m.game||null; render(); }
+    if(m.type==='state'){ if(!saveT&&Date.now()-lastLocal>1500){ S=norm(m.state); vpBd(S.vo.bd); render(); } } /* vừa sửa trên máy này thì giữ bản của máy này */
+    else if(m.type==='full'){ SUM=m.summary||null; PREV=!!m.prev; GAME=m.game||null; render(); }
     else if(m.type==='game'){ GAME=m.game||null; renderVO(); }
-    else if(m.type==='summary'){ SUM=m.summary||null; if(!SUM) S.set.sum=0; render(); }
+    else if(m.type==='summary'){ SUM=m.summary||null; PREV=!!m.prev; if(!SUM) S.set.sum=0; render(); }
     else if(m.type==='avatar'){ if(m.url) AV[m.n]=m.url; else delete AV[m.n]; render(); } };
   ws.onclose=()=>{ setSt(false); clearInterval(pingT); setTimeout(connect,Math.min(15000,1000*2**tries++)); }; }
 const hh=()=>{ const t=document.querySelector('.top'); document.documentElement.style.setProperty('--hh',(t&&getComputedStyle(t).position==='sticky'?t.offsetHeight:0)+'px'); };

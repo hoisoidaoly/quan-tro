@@ -1,4 +1,4 @@
-﻿QUẢN TRÒ ĐẠO LÝ · WEB QUẢN TRÒ + OVERLAY OBS KIỂM PHIẾU (HƯỚNG DẪN CHO WINDOWS)
+QUẢN TRÒ ĐẠO LÝ · WEB QUẢN TRÒ + OVERLAY OBS KIỂM PHIẾU (HƯỚNG DẪN CHO WINDOWS)
 ================================================================================
 
 Trong thư mục này:
@@ -178,3 +178,14 @@ Trang điều khiển › tab "Khung kiểm phiếu":
 Cập nhật: chép đè public\index.html, public\overlay.html, public\dieu-khien.html, src\worker.js
 rồi bấm đúp 2-DANG-WEB.bat. OBS: chuột phải nguồn "Kiểm phiếu" › Properties › "Refresh cache of current page".
 Link OBS vẫn như cũ (/overlay?room=TTDL). Không cần thêm tham số &y= &w= nữa (vẫn còn &test=1..6, &test=idle để xem mẫu).
+
+
+BẢN CẬP NHẬT 04/11/2026: KIỂM PHIẾU, TỔNG KẾT VÁN
+-------------------------------------------------
+- Nút "Kiểm phiếu: BẬT/TẮT" (thanh trên cùng của trang điều khiển): bật/tắt bảng kiểm phiếu trên stream.
+  Không bấm gì thì sau 2 phút bảng tự nhường chỗ cho khung giải thích. Bấm tay thì giữ theo tay đến lần chốt vote mới.
+- Bấm "Hiện tổng kết ván": cả khung kiểm phiếu và khung giải thích ẩn. Tắt tổng kết thì khung quay về
+  thẻ "Tình hình làng" như bình thường (không hiện lại bảng kiểm phiếu cũ).
+- Worker giữ lại 1 bản tổng kết của ván gần nhất. Lỡ bấm "Ván mới": trang điều khiển hiện nút
+  "Khôi phục tổng kết ván trước", bấm xong rồi bấm "Hiện tổng kết ván". Khi ván tiếp theo có tổng kết thì bản cũ mới bị thay.
+- Cập nhật: chép đè public\overlay.html, public\dieu-khien.html, src\worker.js rồi bấm đúp 2-DANG-WEB.bat.

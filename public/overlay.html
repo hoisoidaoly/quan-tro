@@ -10,7 +10,9 @@
    Một khung duy nhất ở giữa cạnh dưới: lúc có kết quả vote thì hiện bảng kiểm phiếu, còn lại xoay 3 thẻ idle.
    Vị trí, cỡ, ẩn/hiện và vai cần giải thích chỉnh ở trang điều khiển (tab "Khung kiểm phiếu").
    Tham số URL: room=MÃ · test=1..6 mẫu kiểm phiếu · test=idle mẫu idle · preview=1 (khung xem trước trong trang điều khiển)
-   hide=giây tự ẩn bảng kiểm phiếu (0 = theo web quản trò) · sec=giây mỗi thẻ idle (9) · idle=0 tắt idle */
+   hide=giây tự ẩn bảng kiểm phiếu (0 = theo web quản trò) · sec=giây mỗi thẻ idle (9) · idle=0 tắt idle
+   Bảng kiểm phiếu tự nhường chỗ cho khung giải thích (idle) sau 2 phút; nút "Kiểm phiếu" ở trang điều khiển bật/tắt tay.
+   Khi bảng tổng kết ván đang hiện (trang điều khiển), cả khung này ẩn đi; tắt tổng kết thì quay về idle bình thường. */
 :root{--blue:#2E5A88;--red:#9E2A2B;--cream:#F8EFB5;--beige:#D5CCA1;--gold:#D4AF37;--paper:#FEFCF5;--ink:#2B1810;--mute:#5D544F;--wood:#3E2723;--line:rgba(139,94,60,.25);--pink:#F6DCD2}
 html,body{margin:0;background:transparent;overflow:hidden;font-family:Quicksand,system-ui,sans-serif;color:var(--ink)}
 body.pv{background:#1b1410}
@@ -118,19 +120,27 @@ const fmt=n=>String(n).replace('.',',');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 /* ---------- cài đặt khung (từ trang điều khiển: state.vo) ---------- */
 let VO={sc:100,x:0,y:72,ih:200,hide:0,sp:null};
-function applyVO(v){ VO=Object.assign({sc:100,x:0,y:72,ih:200,hide:0,sp:null},v||{});
+function applyVO(v,full){ VO=Object.assign({sc:100,x:0,y:72,ih:200,hide:0,sp:null},v||{});
+  /* lệnh bật/tắt kiểm phiếu từ trang điều khiển: bd={on,n}; n đổi là lệnh mới. Lần tải đầu chỉ ghi nhớ n, không chạy lại lệnh cũ */
+  const bd=v&&v.bd;
+  if(full){ VP.init=true; if(bd&&bd.n!==undefined) VP.n=bd.n;
+    if(bd&&bd.at&&LASTM&&LASTM.at===bd.at) VP.man=bd.on?1:0; } /* lệnh tay của đúng lượt vote đang hiện thì khôi phục sau khi tải lại / nối lại */
+  else if(VP.init&&bd&&bd.n!==undefined&&bd.n!==VP.n){ VP.n=bd.n; VP.man=bd.on?1:0; tick(); }
   POS.style.setProperty('--s',Math.max(.4,Math.min(2,(+VO.sc||100)/100)));
   POS.style.setProperty('--x',(+VO.x||0)+'px'); POS.style.setProperty('--y',(VO.y==null?72:+VO.y)+'px');
   IW.style.setProperty('--ih',(+VO.ih||200)+'px');
-  POS.classList.toggle('off',!!VO.hide); if(iOn) idleSoft(); }
+  POS.classList.toggle('off',!!VO.hide||COV); if(iOn) idleSoft(); }
 /* ================= BẢNG KIỂM PHIẾU ================= */
-let hideT=null, lastAt=0, seen=0;
+let hideT=null, lastAt=0, seen=0, outT=null, LASTM=null, COV=false, STSUM=false, HASSUM=false;
+/* bật/tắt bảng kiểm phiếu: mặc định hiện 2 phút rồi nhường chỗ cho khung giải thích; bấm nút ở trang điều khiển thì theo tay (man) đến lần kiểm phiếu mới */
+const VPSEC=120, VP={on:false,t0:0,man:null,n:null,init:false};
+const vpWant=()=>!!LASTM&&VP.on&&(VP.man!=null?!!VP.man:Date.now()-VP.t0<VPSEC*1000);
 function rowKind(m,r){ if(!r.hot) return {c:'',l:''}; const t=(m.title||'').toLowerCase();
   if(/đắc cử/.test(t)) return {c:'win',l:'ĐẮC CỬ'};
   if(/bị loại khỏi/.test(t)) return {c:'hot',l:'LOẠI'};
   if(/hòa/.test(t)) return {c:'pk',l:'PK'};
   return {c:'',l:''}; }
-function show(m){
+function renderBoard(m){
   const rows=m.rows||[], tok=(p,k)=>`<i class="${m.mayor===p?'tt':''}" style="--k:${k}">${p}</i>`;
   const html=rows.map((r,i)=>{ const K=rowKind(m,r);
     return `<div class="row ${K.c}" style="--r:${i}"><div class="seat">${K.l?`<small>${K.l}</small>`:''}${r.t}</div>
@@ -139,15 +149,26 @@ function show(m){
   const t=m.title||'', bad=/bị loại khỏi|mất cúp/i.test(t), win=/đắc cử/i.test(t);
   W.innerHTML=`<div class="k${rows.length>3?' many':''}"><div class="tab ${bad?'red':win?'gold':''}">${esc(t)}</div>
     ${m.sub?`<p class="sub ${bad?'bad':''}">${esc(m.sub)}</p>`:''}<div class="rows">${html||'<div class="empty">Không ai có phiếu</div>'}</div>${blank}</div>`;
-  idleOff(); W.classList.remove('on','out'); void W.offsetWidth; W.classList.add('on');
-  clearTimeout(hideT); if(HIDE>0) hideT=setTimeout(hide,HIDE*1000); }
-function hide(){ clearTimeout(hideT); if(!W.classList.contains('on')){ idleOn(); return; } W.classList.add('out');
-  setTimeout(()=>{ W.classList.remove('on','out'); idleOn(); },320); }
+  clearTimeout(outT); idleOff(); W.classList.remove('on','out'); void W.offsetWidth; W.classList.add('on'); }
+function boardOut(){ if(W.classList.contains('out')) return; W.classList.add('out'); clearTimeout(outT);
+  outT=setTimeout(()=>{ W.classList.remove('on','out'); if(!vpWant()) idleOn(); },320); }
+/* đồng bộ bảng kiểm phiếu với ý muốn (vpWant): chạy mỗi 0,5 giây và mỗi khi có tin mới */
+function tick(force){ const want=vpWant(), on=W.classList.contains('on'), out=W.classList.contains('out');
+  if(want){ if(!on||out||force) renderBoard(LASTM); }
+  else if(on&&!out) boardOut();
+  else if(!on&&!iOn) idleOn(); }
+setInterval(tick,500);
+/* tổng kết ván đang hiện (trang điều khiển) thì ẩn cả khung; tắt tổng kết thì về khung idle bình thường, không khôi phục bảng kiểm phiếu cũ */
+function setCov(){ const c=!!(STSUM&&HASSUM); if(c===COV) return; COV=c; POS.classList.toggle('off',!!VO.hide||COV);
+  if(!c){ VP.on=false; clearTimeout(outT); W.classList.remove('on','out'); idleOff(); idleOn(); } }
 function onMsg(m){ if(!m||!m.type) return; const first=!seen; seen=1;
   if(m.type==='show'){ if(m.at&&m.at===lastAt) return; lastAt=m.at||0;
     if(first&&m.at&&Date.now()-m.at>3*3600000) return; /* OBS bật lại mà kết quả đã quá cũ thì bỏ */
-    show(m); }
-  else if(m.type==='hide') hide(); }
+    LASTM=m; VP.on=true; VP.man=null; VP.t0=first&&m.at?m.at:Date.now();
+    if(VO.bd&&VO.bd.at&&VO.bd.at===m.at) VP.man=VO.bd.on?1:0;
+    clearTimeout(hideT); if(HIDE>0) hideT=setTimeout(()=>{ VP.on=false; tick(); },HIDE*1000);
+    tick(true); }
+  else if(m.type==='hide'){ clearTimeout(hideT); VP.on=false; tick(); } }
 const SAMPLES={
   1:{title:'Người bị loại khỏi làng',sub:'Số 1 bị loại với 11,5 phiếu',mayor:3,rows:[{t:1,n:11.5,hot:1,who:[2,3,4,5,6,7,8,9,10,11,12]},{t:5,n:1,who:[1]}],blank:[]},
   2:{title:'Thị trưởng đắc cử',sub:'Số 3 đắc cử với 6 phiếu',rows:[{t:3,n:6,hot:1,who:[1,2,4,5,6,8]},{t:7,n:2,who:[9,10]}],blank:[11,12]},
@@ -205,8 +226,11 @@ function sock(path,on){ let ws, tries=0, pt=null;
     ws.onclose=()=>{ clearInterval(pt); setTimeout(go,Math.min(15000,1000*2**tries++)); }; })(); }
 if(ROOM){
   sock('/api/room/'+ROOM+'/ws',onMsg);
-  sock('/api/stage/'+ROOM+'/ws',m=>{ if(m.type==='full'){ applyVO(m.state&&m.state.vo); setGame(m.game); }
-    else if(m.type==='state') applyVO(m.state&&m.state.vo); else if(m.type==='game') setGame(m.game); });
+  sock('/api/stage/'+ROOM+'/ws',m=>{
+    if(m.type==='full'){ STSUM=!!(m.state&&m.state.set&&m.state.set.sum); HASSUM=!!m.summary; applyVO(m.state&&m.state.vo,true); setGame(m.game); setCov(); }
+    else if(m.type==='state'){ STSUM=!!(m.state&&m.state.set&&m.state.set.sum); applyVO(m.state&&m.state.vo); setCov(); }
+    else if(m.type==='summary'){ HASSUM=!!m.summary; setCov(); }
+    else if(m.type==='game') setGame(m.game); });
 }
 /* trang điều khiển xem trước gửi cài đặt thẳng vào khung (không cần chờ server) */
 addEventListener('message',e=>{ const d=e.data; if(d&&d.qtdlVO) applyVO(d.qtdlVO); if(d&&d.qtdlGame!==undefined) setGame(d.qtdlGame); });
@@ -215,7 +239,7 @@ if(Q.get('test')==='idle') G={phase:'Ngày 1',set:'Phong ấn - Bảo vệ',n:12
   good:[{id:'dan',n:'Dân làng',c:4},{id:'tientri',n:'Tiên tri',c:1},{id:'baove',n:'Bảo vệ',c:1},{id:'phuthuy',n:'Phù thủy',c:1},{id:'thosan',n:'Thợ săn',c:1}],
   wolf:[{id:'soi',n:'Sói thường',c:3},{id:'phongan',n:'Sói Phong Ấn',c:1}],special:['phongan'],
   roles:{phongan:{n:'Sói Phong Ấn',t:'soi',d:'Dậy đầu tiên, phong ấn 1 người: người đó được báo bị phong ấn (❌) và không dùng được kỹ năng đêm đó. Phong ấn trúng Sói thì đêm đó bầy không được cắn. Không phong ấn 1 người 2 đêm liền. Không được nổ.'}}};
-if(Q.get('test')&&Q.get('test')!=='idle') show(Object.assign({type:'show'},SAMPLES[Q.get('test')]||SAMPLES[1]));
+if(Q.get('test')&&Q.get('test')!=='idle'){ LASTM=Object.assign({type:'show'},SAMPLES[Q.get('test')]||SAMPLES[1]); VP.on=true; VP.man=1; tick(true); }
 else idleOn();
 </script>
 </body></html>
