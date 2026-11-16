@@ -2679,6 +2679,16 @@ function dayHints(){
   S.dayPick.forEach(p=>{ const r=roleOf(p); if(r==='ngoc'&&S.puppet!==p&&!knightLocked().includes(p)) hints.push(ngocCanFlipDay(p)?'Số '+p+' là Kẻ ngốc: lật bài công khai là Kẻ ngốc, rồi vẫn bị loại và rời bàn.':'Số '+p+' là Kẻ ngốc nhưng đang ngủ (lời nguyền Công chúa): không được lật bài, bị loại như thường.'); });
   const pa=aliveHolders('phongan')[0]; if(pa!=null&&!S.dayPick.includes(pa)) hints.push('Sói Phong Ấn (số '+pa+') không được nổ tự sát.');
   return hints; }
+/* DI NGÔN: công bố người bị loại đêm qua ở ngày đầu tiên (hoặc khi Sói nổ lần 1 trên giàn tranh cử) thì người bị loại được nói lời cuối, thứ tự bốc thăm ngẫu nhiên */
+function dnShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function dnEligible(){ const R=S.report; if(S.step!=='morning'||electing()||!R||!R.deaths.length||S.win) return false;
+  const BK=S.v&&S.v.boomP!=null&&S.v.wasBoom?S.v.boomKind:null; return BK?BK==='delay':S.night===1; }
+function dnState(){ if(!dnEligible()) return null; if(!S.dn||S.dn.n!==S.night){ S.dn={n:S.night,order:dnShuffle(S.report.deaths),i:0,done:0}; } return S.dn; }
+const dnPending=()=>{ const d=dnState(); return !!d&&!d.done; };
+function dnHtml(){ const d=dnState(); if(!d) return '';
+  if(d.done) return `<div class="box"><h3>🎙️ Di ngôn xong</h3><p>Thứ tự đã nói: số ${d.order.join(', ')}.</p></div>`;
+  return `<div class="box blue"><h3>🎙️ Di ngôn · người bị loại đêm qua nói lời cuối</h3><p>Thứ tự bốc thăm ngẫu nhiên. Nói xong bấm "Người tiếp".</p>${speakerHtml(d.order,d.i,'Di ngôn')}
+    <div class="row2" style="margin-top:10px">${d.i===0&&d.order.length>1?'<button class="pill" data-a="dnre">🎲 Bốc thăm lại</button>':''}<button class="pill" data-a="dnskip">Bỏ qua di ngôn</button></div></div>`; }
 function vMorning(){
   const R=S.report; let html='',cta='',ok=true,hint='',dock='';
   if(electing()){ const v=S.v; S.elDay=S.night;
@@ -2716,11 +2726,13 @@ function vMorning(){
   ${muteBox()}
   ${S.bear&&S.bear.night===S.night?`<div class="box ${S.bear.roar?'red':'blue'}"><h3>🐻 ${S.bear.roar?'Gấu gầm':'Gấu không gầm'}</h3><p>Thông báo cho cả bàn. Riêng quản trò: ${esc(S.bear.why)}.</p></div>`:''}
   ${R.deaths.filter(p=>S.puppet===p&&(roleOf(p)==='thosan'||roleOf(p)==='sansoi')).map(voidAlert).join('')}
+  ${dnHtml()}
   ${hunterShotHtml()}
   ${S.mayor&&S.dead[S.mayor]?mayorTransferHtml([]):''}
   <details class="gm" ${R.deaths.length||R.notes.length?'':''}><summary>Ghi chú riêng cho quản trò</summary>${gmNotes(R)}</details>
   ${S.mayor&&S.dead[S.mayor]||hunterPending()?'':dRing({cls:p=>R.deaths.includes(p)?'on':'',deadFn:p=>!!S.dead[p]&&!R.deaths.includes(p),mid:`<div class="mid"><b>${nums().filter(alive).length}</b><small>còn trên bàn</small></div>`})}`;
   cta=BK?'Vào đêm '+(S.night+1)+' ☾':'Bắt đầu phát biểu ›';
+  if(dnPending()){ const d=S.dn; cta=d.i<d.order.length-1?'Người tiếp di ngôn ›':'Xong di ngôn ›'; }
   return {html,cta,ok,hint,dock}; }
 /* Ghi chú riêng cho quản trò: hành động của các vai theo từng đêm + ô tự ghi chú */
 /* Lấy từ nhật ký đêm (đủ cả Gấu, Kẻ ngốc, Công chúa…), bỏ dòng người bị loại và "Đêm bình an" */
@@ -2811,6 +2823,7 @@ function postVote(){ const v=S.v; v.done=[]; v.act=null; if(v.st==='mpk'||v.st==
 function onCta(){
   tmStop();
   if(S.step==='settings'){ save(); S.step='night'; S.night=1; S.idx=0; S.cur={}; S.assign={}; window.scrollTo(0,0); return; }
+  if(dnPending()){ save(); const d=S.dn; if(d.i<d.order.length-1) d.i++; else d.done=1; tmKey=null; window.scrollTo(0,0); return; }
   if(S.step==='morning'&&electing()){ const v=S.v;
     if(v.st==='mreg'){ v.cand.length?doDraw():doNoCand(); return; }
     if(v.st==='mtalk'&&!v.talked&&!v.resumed){ save(); if((v.sp||0)<v.order.length-1) v.sp=(v.sp||0)+1; else v.talked=1; return; }
@@ -2825,7 +2838,7 @@ function onCta(){
   advance(); }
 function startTimers(o){
   if(S.step==='night'&&o.tkey){ if(tmKey!==o.tkey){ tmKey=o.tkey; tmStart(o.tsec); } return; }
-  const sp=document.getElementById('spclock'); if(sp){ const key=S.step+S.night+'|'+(S.v&&S.v.st)+'|'+(S.v&&S.v.sp)+'|'+(S.v&&S.v.psp)+'|'+S.dst+'|'+S.sp+'|'+(S.v&&S.v.talked)+(S.v&&S.v.pkTalked);
+  const sp=document.getElementById('spclock'); if(sp){ const key=S.step+S.night+'|'+(S.v&&S.v.st)+'|'+(S.v&&S.v.sp)+'|'+(S.v&&S.v.psp)+'|'+S.dst+'|'+S.sp+'|'+(S.v&&S.v.talked)+(S.v&&S.v.pkTalked)+'|dn'+(S.dn&&S.dn.n===S.night?S.dn.i+'-'+S.dn.done:'');
     if(tmKey!==key){ tmKey=key; tmStart(S.opt.talk); } else tmDraw(); return; }
   if(tmKey&&TM.total){ tmKey=null; tmStop(); } }
 
@@ -2856,6 +2869,8 @@ document.addEventListener('click',e=>{
       else S.order=dayOrder(al,v);
       S.sp=0; S.dst='speak'; tmKey=null; break; }
     case 'skiptalk': save(); S.dst='vote'; break;
+    case 'dnre': { save(); const d=dnState(); if(d){ d.order=dnShuffle(d.order); d.i=0; tmKey=null; } break; }
+    case 'dnskip': { save(); const d=dnState(); if(d){ d.done=1; tmKey=null; } break; }
     case 'dshot': { const by=+b.dataset.id; save(); S.dshot[by]=v===''?null:p;
       if(v!==''){ if(!S.dayPick.includes(p)) S.dayPick.push(p); S.dayWhy[p]='Bị số '+Math.floor(by)+' bắn'; tlAdd('Ngày '+S.night,{t:'Số '+Math.floor(by)+' ('+(ROLES[roleOf(Math.floor(by))]?.n||'')+') bắn số '+p}); }
       else tlAdd('Ngày '+S.night,{t:'Số '+Math.floor(by)+' không bắn'}); break; }
