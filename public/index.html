@@ -1626,7 +1626,9 @@ function vAdvance(){
     if(v.st==='xvote'){ v.pk=r.tie; v.st='xpk'; v.xres={t:`Hòa phiếu giữa số ${r.tie.join(', ')}: những người này PK nói tiếp, rồi vote lại.`}; vRes('Hòa phiếu: số '+r.tie.join(', ')+' PK'); return; }
     tlAdd(ph,{t:'Vote loại vẫn hòa sau PK: không ai bị loại',ok:1}); v.xres={calm:1,t:'Vẫn hòa sau PK: không ai bị loại, bình an vào đêm.'}; vRes('Vẫn hòa: bình an'); v.st='done'; return; }
 }
-function vBoomOk(p){ const r=roleOf(p); return !isAfk(p)&&vOnTable().includes(p)&&alive(p)&&isWolfCard(p)&&p!==stoneNow()&&r!=='mynhan'&&r!=='quytuong'&&r!=='matna'; }
+/* Sói nổ: lúc tranh cử buổi sáng, Sói chết đêm qua (chưa công bố) vẫn nổ được. Không nổ: Sói Mỹ Nhân, Phong Ấn, Quỷ tượng, Mặt nạ, Sói đang hóa đá */
+const NO_BOOM=['mynhan','phongan','quytuong','matna'];
+function vBoomOk(p){ const r=roleOf(p); return !isAfk(p)&&vOnTable().includes(p)&&(S.step==='morning'||alive(p))&&isWolfCard(p)&&p!==stoneNow()&&!NO_BOOM.includes(r); }
 function vBoom(p){
   const v=VL(), ph='Ngày '+S.night, inMayor=v.st[0]==='m';
   v.boomP=p; if(S.step==='day'){ if(!S.dayPick.includes(p)) S.dayPick.push(p); S.dayWhy[p]='Tự nổ'; }
@@ -2640,7 +2642,7 @@ function voteUI(title){ const v=S.v, T=vTargets(), V=vVoters(), tal=vTally(); v.
   return `<p class="eyebrow">${esc(title)}</p><h1>${act!=null?`Ai vote cho số ${act}?`:'Đã chọn xong'}</h1>
   <p class="lead">Chọn số ở trên, chạm người giơ tay ở vòng dưới${v.st==='xvote'&&S.mayor!=null&&V.includes(S.mayor)?'. Thị trưởng (TT) tính 1,5 phiếu':v.st==='xpk'&&S.mayor!=null&&V.includes(S.mayor)?'. PK: Thị trưởng (TT) chỉ tính 1 phiếu':''}${v.st==='xvote'&&princessActive()&&V.includes(S.princess)?`. Công chúa số ${S.princess} (👑, chỉ quản trò biết) cộng 0,5 phiếu`:''}. Ai không vote là phiếu trắng${ex.length?'. Lưu ý: '+ex.join(', '):''}.</p>
   ${chips}
-  ${dRing({act:act!=null?'vb':'',dis:p=>!V.includes(p)||(v.b[p]!=null&&v.b[p]!==act&&T.includes(v.b[p]))||p===act,deadFn:p=>!vOnTable().includes(p),
+  ${dRing({act:act!=null?'vb':'',dis:p=>!V.includes(p)||(v.b[p]!=null&&v.b[p]!==act&&T.includes(v.b[p])), /* được tự vote bản thân */deadFn:p=>!vOnTable().includes(p),
      cls:p=>(v.b[p]===act&&act!=null?'on ':'')+(p===act?'cand ':'')+(!V.includes(p)&&vOnTable().includes(p)?'dim ':'')+(v.b[p]!=null&&v.b[p]!==act&&T.includes(v.b[p])?'dim':''),
      extra:p=>v.b[p]!=null&&v.b[p]!==act&&T.includes(v.b[p])?`<i class="vt">→${v.b[p]}</i>`:'',
      mid:`<div class="mid"><b>${act!=null?fmtV(tal[act].n):'–'}</b><small>${act!=null?'phiếu cho số '+act:''}</small></div>`})}
@@ -2785,7 +2787,7 @@ function eventsHtml(){
   const onT=p=>!S.dead[p]&&!S.dayPick.includes(p);
   if(!evSheet.sub) return `<h2>Sự kiện ban ngày <button data-a="evclose">Đóng</button></h2><p class="sub">Chỉ hiện vai có trong ván.</p><div class="evlist">
     ${on('kysi')?`<button class="ev" data-a="evk" ${kOk?'':'disabled'}>${art('kysi')}<span><b>Kỵ sĩ lật bài đâm</b><small>${k==null?'Chưa gán':!alive(k)||S.dayPick.includes(k)?'Kỵ sĩ đã bị loại':S.knightUsed?'Đã dùng (1 lần cả ván)':inMorning?'Chỉ dùng sau khi công bố, trước khi chốt vote':'Số '+k+' · trước khi chốt phiếu vote loại'}</small></span></button>`:''}
-    <button class="ev" data-a="evb" ${boomList.length?'':'disabled'}>${art('soi')}<span><b>Sói nổ</b><small>Sói tự sát, ban ngày kết thúc.${inMorning?' Đang tranh cử: nổ lần 1 hoãn bầu sang mai, lần 2 mất cúp.':''} Sói Mỹ Nhân, Sói Phong Ấn, Sói bị hóa đá không được nổ.</small></span></button>
+    <button class="ev" data-a="evb" ${boomList.length?'':'disabled'}>${art('soi')}<span><b>Sói nổ</b><small>Sói tự sát, ban ngày kết thúc.${inMorning?' Đang tranh cử: nổ lần 1 hoãn bầu sang mai, lần 2 mất cúp.':''} Sói Mỹ Nhân, Sói Phong Ấn, Quỷ tượng, Mặt nạ, Sói bị hóa đá không được nổ.</small></span></button>
     ${S.step==='day'?`<button class="ev" data-a="evx">${art('dan')}<span><b>Loại thêm người (sửa tay)</b><small>Dùng khi có người bị loại ngoài vote (vd. luật riêng của vai).</small></span></button>`:''}</div>`;
   if(evSheet.sub==='k') return `<h2>Kỵ sĩ số ${k} đâm ai? <button data-a="evclose">Huỷ</button></h2><div style="max-width:320px;margin:0 auto">${dRing({act:'evkp',deadFn:p=>!onT(p),dis:p=>p===k})}</div>`;
   if(evSheet.sub==='b') return `<h2>Sói nào nổ? <button data-a="evclose">Huỷ</button></h2><div style="max-width:320px;margin:0 auto">${dRing({act:'evbp',deadFn:p=>!vOnTable().includes(p),dis:p=>!boomList.includes(p)})}</div>`;
