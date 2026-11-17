@@ -1094,6 +1094,7 @@ function danceNow(){ if(S.night<2||!canUse('vusu')) return null; const t=(S.cur.
 function maskNow(){ return S.night>=2&&canUse('matna')&&tgt('matna')!=null?act('matna'):null; }
 const maskSeen=()=>{ const o={}; (S.maskHist||[]).filter(h=>h.n<S.night).forEach(h=>{ o[h.p]='úp Đ'+h.n; }); return o; };
 function maskHistNote(){ const H=(S.maskHist||[]).filter(h=>h.n<S.night); return H.length?`<div class="mkhist">🎭 Đã úp mặt nạ: ${H.map(h=>`<span>Đêm ${h.n}: <b>số ${h.p}</b>${h.n===S.night-1?' (đêm qua, đêm nay khoá)':''}</span>`).join('')}</div>`:'<div class="mkhist">🎭 Chưa úp mặt nạ ai.</div>'; }
+const checkLast=()=>{ const h=(S.mqHist||[]).find(x=>x.n===S.night-1); return h?h.p:null; }; /* Mặt nạ không kiểm tra cùng 1 người 2 đêm liền */
 const maskLast=()=>{ const h=(S.maskHist||[]).find(x=>x.n===S.night-1); return h?h.p:null; }; /* úp mặt nạ cách đêm: đêm qua úp ai thì đêm nay không úp lại người đó */
 function danceSide(p,mask){ const w=isWolfSide(p); return (p===mask?!w:w)?'soi':'tot'; }
 function danceOutcome(){ const d=danceNow(); if(!d) return null; const m=maskNow(), sd=d.map(p=>danceSide(p,m));
@@ -1344,6 +1345,7 @@ function finishNight(){
   if(S.on.mynhan){ const b=holders('mynhan')[0]; S.charm=b!=null&&alive(b)?pre.charm:null; }
   if(S.on.detmong) S.dmLast=pre.dm;
   S.petrified=pre.petr!=null&&alive(pre.petr)?pre.petr:null;
+  { const mq=S.night>=2&&canUse('matna')?tgt('matnaq'):null; S.mqHist=(S.mqHist||[]).filter(h=>h.n!==S.night).concat(mq!=null?[{n:S.night,p:mq}]:[]); }
   { const mk=S.night>=2&&canUse('matna')?tgt('matna'):null; S.maskHist=(S.maskHist||[]).filter(h=>h.n!==S.night).concat(mk!=null?[{n:S.night,p:mk}]:[]); }
   { const o=ttTonight(); if(o) S.tt={n:S.night,...o}; const xg=tgt('xtgive'); if(xg!=null&&canUse('xathu')&&xtGuns()>0&&!(S.xt||[]).includes(xg)) S.xt=(S.xt||[]).concat([xg]); }
   { const dn=danceNow(); S.danced=(S.danced||[]).filter(h=>h.n!==S.night).concat(dn?[{n:S.night,ps:dn}]:[]); }
@@ -1856,6 +1858,7 @@ function mimaMark(p,id){ if(S.step!=='night') return null;
   if(id==='matna'||id==='matnaq'){ const d=danceNow()||[], q=tgt('matnaq'), m=tgt('matna');
     if(p===m) return {cls:'mk',b:'🎭',lab:'úp mặt nạ'};
     if(id==='matna'&&p===maskLast()) return {cls:'stused',b:'🎭',lab:'úp Đ'+(S.night-1)};
+    if(id==='matnaq'&&p===checkLast()) return {cls:'stused',b:'🔍',lab:'soi Đ'+(S.night-1)};
     if(p===q&&id==='matna') return {cls:d.includes(p)?'dz':'',b:d.includes(p)?'👍':'👎',lab:'đã kiểm tra'};
     if(d.includes(p)) return {cls:'dz',b:'💃',lab:'đội nhảy'}; const ms=maskSeen(); return ms[p]?{cls:'mkold',b:'🎭',lab:ms[p]}:null; }
   if(id==='medusa'){ const sn=stoneSeen(); return sn[p]?{cls:'stused',b:'🗿',lab:sn[p]}:null; }
@@ -2016,7 +2019,7 @@ function actionBlock(id){
     case 'matna': { if(N<2) return '<div class="note">Từ <b>đêm 2</b> Mặt nạ mới kiểm tra và đeo mặt nạ. Đêm 1 gọi dậy cho đúng nhịp rồi mời ngủ.</div>';
       const d=danceNow(), q=tgt('matnaq'), qc=S.cur.matnaq, step1=q!=null||(qc&&qc.none), inD=q!=null&&!!d&&d.includes(q);
       const top=maskHistNote()+(d?'':'<div class="note">Đêm nay không có vũ hội: kiểm tra ai cũng ra 👎.</div>');
-      if(!step1) return top+pick('matnaq',1,{title:'Bước 1 · Chạm người Mặt nạ kiểm tra',sub:'💃 = đang trong đội nhảy',none:'Không kiểm tra'});
+      if(!step1) return top+pick('matnaq',1,{title:'Bước 1 · Chạm người Mặt nạ kiểm tra',sub:'💃 = đang trong đội nhảy',dis:p=>p===checkLast()?'lock':null,none:'Không kiểm tra'})+(checkLast()!=null?`<div class="note">Đêm qua đã kiểm tra số <b>${checkLast()}</b>: đêm nay không kiểm tra lại người này.</div>`:'');
       const res=q!=null?`<div class="mnres ${inD?'ok':'no'}"><b>${inD?'👍 LIKE':'👎 DISLIKE'}</b><span>Số ${q} ${inD?'có':'không'} trong đội nhảy · ra dấu ${inD?'👍':'👎'}</span><button data-a="mnre">Đổi</button></div>`
         :`<div class="mnres"><b>Không kiểm tra</b><span></span><button data-a="mnre">Đổi</button></div>`;
       const o=danceOutcome();
