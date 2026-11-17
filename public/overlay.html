@@ -180,7 +180,7 @@ const SAMPLES={
 let G=null, iIdx=0, iSp=0, iT=null, iOn=false, RF={};
 fetch('roles/roles.json').then(r=>r.json()).then(a=>{ a.forEach(x=>RF[x.id]=x.f); if(iOn) idleSoft(); }).catch(()=>{});
 const ini=n=>String(n||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
-const av=(id,n)=>`<span class="av">${RF[id]?`<img src="roles/${RF[id]}" alt="">`:esc(ini(n))}</span>`;
+const av=(id,n)=>`<span class="av">${RF[id]?`<img src="${/^https?:/.test(RF[id])?RF[id]:'roles/'+RF[id]}" alt="">`:esc(ini(n))}</span>`;
 const sum=a=>(a||[]).reduce((s,r)=>s+r.c,0);
 /* vai cần giải thích: điều khiển chọn (VO.sp, theo đúng bộ vai đang chơi) hoặc mặc định của web quản trò */
 function spList(){ if(!G||!G.roles) return []; const key=G.set+'|'+G.n;

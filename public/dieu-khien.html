@@ -170,6 +170,7 @@ details.more summary{cursor:pointer;color:var(--sky);font-size:13px;margin:12px 
 <div id="sheet"></div><div id="crop"></div>
 <input type="file" id="file" accept="image/*" hidden><input type="file" id="files" accept="image/*" multiple hidden>
 <script>
+const rimg=f=>/^https?:/.test(f)?f:BASE+'/roles/'+f;
 const Q=new URLSearchParams(location.search), ROOM=(Q.get('room')||'TTDL').toUpperCase();
 const BASE=location.protocol==='file:'?'https://quantro.hoisoidaoly.workers.dev':'';
 const $=s=>document.querySelector(s), esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
@@ -201,7 +202,7 @@ function card(p,i){ const n=i+1, u=AV[n];
     <div class="wrap-av"><span class="no">${n}</span>${S.mayor===n?`<img class="tt" src="${BASE}/assets/thi-truong.webp" alt="Thị trưởng">`:''}<div class="av ${u?'has':''}" data-a="speak" data-i="${i}" style="${u?`background-image:url('${u}')`:''}" title="Bấm: đang phát biểu">${u?'':'Chưa<br>có ảnh'}</div><button class="cam" data-a="pick" data-i="${i}" title="Chọn ảnh">📷</button>${u?`<button class="rm" data-a="rmav" data-i="${i}" title="Xóa ảnh">×</button>`:''}</div>
     <input class="nm" data-i="${i}" value="${esc(p.name)}" placeholder="Tên số ${n}" maxlength="22">
     <div class="tg"><button class="d ${p.dead?'on':''}" data-a="dead" data-i="${i}">${p.dead?'ĐÃ CHẾT':'CHẾT'}</button><button class="p ${p.pov?'on':''}" data-a="pov" data-i="${i}">POV</button><button class="m ${S.mayor===n?'on':''}" data-a="mayor" data-i="${i}" title="Thị trưởng">TT</button></div>
-    <div class="rl">${(p.roles||[]).filter(r=>RM[r]).map(r=>`<button class="ch" data-a="roles" data-i="${i}"><img src="${BASE}/roles/${RM[r].f}" alt="">${esc(RM[r].n)}</button>`).join('')}<button class="add" data-a="roles" data-i="${i}">+ Icon vai</button><span class="nmrow" title="Cỡ chữ tên trên stream"><button class="fz" data-a="fs" data-v="-10" data-i="${i}">A−</button><span class="fv">${p.fs||100}%</span><button class="fz" data-a="fs" data-v="10" data-i="${i}">A+</button></span></div></div>`; }
+    <div class="rl">${(p.roles||[]).filter(r=>RM[r]).map(r=>`<button class="ch" data-a="roles" data-i="${i}"><img src="${rimg(RM[r].f)}" alt="">${esc(RM[r].n)}</button>`).join('')}<button class="add" data-a="roles" data-i="${i}">+ Icon vai</button><span class="nmrow" title="Cỡ chữ tên trên stream"><button class="fz" data-a="fs" data-v="-10" data-i="${i}">A−</button><span class="fv">${p.fs||100}%</span><button class="fz" data-a="fs" data-v="10" data-i="${i}">A+</button></span></div></div>`; }
 function spbar(){ const n=S.speak, p=n?S.players[n-1]:null;
   $('#spbar').innerHTML=`<div class="who ${n?'on':''}"><small>Đang phát biểu</small>${n?`Số ${n}${p.name?' · '+esc(p.name):''}`:'Chưa ai · bấm vào khung người nói'}</div>
     <button class="btn" data-a="spnext" data-v="-1" title="Người trước (←)">◀</button><button class="btn gold" data-a="spnext" data-v="1" title="Người kế tiếp (→)">Người kế ▶</button><button class="btn" data-a="spoff" ${n?'':'disabled'}>Tắt</button>
@@ -223,7 +224,7 @@ function render(){ spbar(); const g=$('#grid'), f=document.activeElement, fi=f&&
   $('#sumrest').hidden=!(PREV&&!SUM);
   renderVO(); renderSheet(); }
 function renderSheet(){ const sh=$('#sheet'); if(!picking){ sh.innerHTML=''; return; }
-  if(picking.k==='roles'){ const i=picking.i, p=S.players[i], grp=t=>ROLES.filter(r=>r.t===t).map(r=>`<button class="${(p.roles||[]).includes(r.id)?'on':''}" data-a="trole" data-v="${r.id}"><img src="${BASE}/roles/${r.f}" alt="">${esc(r.n)}</button>`).join('');
+  if(picking.k==='roles'){ const i=picking.i, p=S.players[i], grp=t=>ROLES.filter(r=>r.t===t).map(r=>`<button class="${(p.roles||[]).includes(r.id)?'on':''}" data-a="trole" data-v="${r.id}"><img src="${rimg(r.f)}" alt="">${esc(r.n)}</button>`).join('');
     sh.innerHTML=`<div class="sheet" data-a="close"><div class="pane" data-stop="1"><h2>Icon vai · số ${i+1}${p.name?' · '+esc(p.name):''}<button class="btn gold" data-a="close">Xong</button></h2>
       <p class="note">Chạm để bật hoặc tắt. Icon hiện ở góc trên, phía ngoài khung trên stream. Gắn được nhiều icon.</p>
       <h3>Phe Tốt</h3><div class="icons">${grp('tot')}</div><h3 class="soi">Phe Sói</h3><div class="icons">${grp('soi')}</div>
@@ -366,7 +367,7 @@ function renderVO(){
   const ids=spIds(), custom=!!(S.vo.sp&&S.vo.sp.key===spKey());
   const inGame=[...(GAME.good||[]),...(GAME.wolf||[])].map(r=>r.id).filter(id=>GAME.roles[id]);
   const other=Object.keys(GAME.roles).filter(id=>!inGame.includes(id));
-  const lab=id=>{ const r=GAME.roles[id], k=ids.indexOf(id), img=RM[id]?`<img src="${BASE}/roles/${RM[id].f}" alt="">`:'';
+  const lab=id=>{ const r=GAME.roles[id], k=ids.indexOf(id), img=RM[id]?`<img src="${rimg(RM[id].f)}" alt="">`:'';
     return `<label class="${k>=0?'on':''} ${r.t==='soi'?'soi':''}" title="${esc(r.d)}"><input type="checkbox" data-sp="${id}" ${k>=0?'checked':''}>${img}${esc(r.n)}${k>=0?`<span class="ord">${k+1}</span>`:''}</label>`; };
   $('#spdef').hidden=!custom;
   box.innerHTML=`<p class="note" style="margin:0 0 10px">Tích vai nào thì thẻ "Vai đặc biệt" giải thích lần lượt các vai đó theo thứ tự tích (mỗi vòng xoay 1 vai). ${custom?'Đang dùng lựa chọn của bạn.':'Đang dùng mặc định của web quản trò.'} Không tích vai nào thì bỏ thẻ này.</p>

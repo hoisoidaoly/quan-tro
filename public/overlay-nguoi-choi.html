@@ -104,6 +104,7 @@ html,body{margin:0;background:transparent;overflow:hidden;width:1920px;height:10
 </style></head>
 <body><div id="root"></div><div id="sum"><div class="dim"></div><div class="sheet" id="sheet"></div></div>
 <script>
+const rimg=f=>/^https?:/.test(f)?f:BASE+'/roles/'+f;
 const Q=new URLSearchParams(location.search), ROOM=(Q.get('room')||'TTDL').toUpperCase();
 const FW=+Q.get('fw')||188, FH=FW*2048/2096, GAP=+Q.get('gap')||179, MX=Q.get('x')!=null?+Q.get('x'):6, MY=Q.get('y')!=null?+Q.get('y'):4;
 const CX=FW*.5187, CY=FH*.4065, R=FW*.2566+2;
@@ -155,7 +156,7 @@ function render(){
       const z=(nm.length>11?20:nm.length>8?23:27)*sc, cap=FW*(sc>1?1.02:.96); tx.setAttribute('font-size',z.toFixed(1)); tx.setAttribute('y',(FH*(NMY-.70)+z*.33).toFixed(1)); tx.setAttribute('stroke-width',(8*Math.sqrt(sc)).toFixed(1));
       requestAnimationFrame(()=>{ try{ if(tx.getComputedTextLength()>cap){ tx.setAttribute('textLength',cap); tx.setAttribute('lengthAdjust','spacingAndGlyphs'); } }catch(e){} }); }
     const box=el.querySelector('.icons'), want=(p.roles||[]).filter(r=>ROLES[r]), key=want.join(',')+'|'+lay;
-    if(box.dataset.k!==key){ box.dataset.k=key; box.innerHTML=want.map((r,k)=>{ const [x,y]=iconPos(k,n,parseFloat(el.style.left),parseFloat(el.style.top)); return `<div class="ic" style="left:${x}px;top:${y}px;animation-delay:${k*.06}s"><img src="${BASE}/roles/${ROLES[r].f}" alt="${esc(ROLES[r].n)}"></div>`; }).join(''); }
+    if(box.dataset.k!==key){ box.dataset.k=key; box.innerHTML=want.map((r,k)=>{ const [x,y]=iconPos(k,n,parseFloat(el.style.left),parseFloat(el.style.top)); return `<div class="ic" style="left:${x}px;top:${y}px;animation-delay:${k*.06}s"><img src="${rimg(ROLES[r].f)}" alt="${esc(ROLES[r].n)}"></div>`; }).join(''); }
   }); }
 /* ---------- bảng tổng kết ---------- */
 let SUM=null, sumKey='';
@@ -164,7 +165,7 @@ function renderSum(){ const box=document.getElementById('sum'), on=!!(SUM&&S.set
   const key=on?JSON.stringify(SUM)+'|'+(S.set.sump||'bai'):''; if(on&&key!==sumKey){ sumKey=key; buildSum(); }
   box.classList.toggle('on',on); }
 function buildSum(){ const s=SUM, sh=document.getElementById('sheet'), GN={than:'THẦN',dan:'DÂN',soi:'SÓI'};
-  const ic=(id,cls,alt)=>ROLES[id]?`<img class="${cls}" src="${BASE}/roles/${ROLES[id].f}" alt="${SE(alt||'')}">`:`<span class="ini">${SE((alt||'?').trim().charAt(0).toUpperCase())}</span>`;
+  const ic=(id,cls,alt)=>ROLES[id]?`<img class="${cls}" src="${rimg(ROLES[id].f)}" alt="${SE(alt||'')}">`:`<span class="ini">${SE((alt||'?').trim().charAt(0).toUpperCase())}</span>`;
   const row=r=>r?`<div class="r ${r.alive?'':'out'}"><span class="n">${r.p}</span>${ic(r.id,'ic',r.role)}<div style="min-width:0"><div class="nm">${SE(r.name||'Số '+r.p)}${(r.tags||[]).filter(t=>/MVP|SVP|Thị trưởng/.test(t)).map(t=>`<span class="tag">${SE(t)}</span>`).join('')}</div><div class="rl"><span class="g ${r.g}">${GN[r.g]||''}</span>${SE(r.role)}</div></div><div class="f">${SE(r.fate||'')}</div></div>`:'<div></div>';
   const L=s.rows.filter(r=>r.p<=6), Rr=s.rows.filter(r=>r.p>6), nRow=Math.max(L.length,Rr.length);
   const day=(s.when||'').split(' ').find(x=>/\d+\/\d+\/\d+/.test(x))||'';
