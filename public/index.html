@@ -2020,10 +2020,17 @@ function actionBlock(id){
       const res=q!=null?`<div class="mnres ${inD?'ok':'no'}"><b>${inD?'👍 LIKE':'👎 DISLIKE'}</b><span>Số ${q} ${inD?'có':'không'} trong đội nhảy · ra dấu ${inD?'👍':'👎'}</span><button data-a="mnre">Đổi</button></div>`
         :`<div class="mnres"><b>Không kiểm tra</b><span></span><button data-a="mnre">Đổi</button></div>`;
       const o=danceOutcome();
-      return top+res+pick('matna',1,{title:'Bước 2 · Chạm người bị úp mặt nạ 🎭',sub:'chạm lại để bỏ',dis:p=>p===maskLast()?'lock':null,none:'Không úp mặt nạ'})+(o?`<div class="note">Riêng quản trò · ${esc(danceTxt(o))}</div>`:''); }
+      const oNote=o?`<div class="note">Riêng quản trò · ${esc(danceTxt(o))}</div>`:'';
+      const mc=S.cur.matna, mk=tgt('matna'), step2=mk!=null||(mc&&mc.none);
+      if(soloKiller()==='matna'&&step2){ const me=aliveHolders('matna')[0];
+        const bar2=`<div class="mnres ${mk!=null?'ok':''}"><b>🎭 ${mk!=null?'Úp mặt nạ số '+mk:'Không úp mặt nạ'}</b><span></span><button data-a="mkre">Đổi</button></div>`;
+        return top+res+bar2+'<div class="note">Bầy Sói đã bị loại hết: <b>Mặt nạ được giết người như Sói</b>.</div>'+pick('PACK',1,{title:'Bước 3 · Mặt nạ giết ai?',dis:p=>p===me?'self':null,none:'🚫 Mặt nạ không giết ai'})+oNote; }
+      return top+res+pick('matna',1,{title:'Bước 2 · Chạm người bị úp mặt nạ 🎭',sub:'chạm lại để bỏ',dis:p=>p===maskLast()?'lock':null,none:'Không úp mặt nạ'})+(soloKiller()==='matna'?'<div class="note">Úp xong (hoặc bấm Không úp) thì tới bước 3: Mặt nạ giết người.</div>':'')+oNote; }
     case 'VSASG': return `<div class="note">Vũ sư là <b>số ${holders('vusu').join(', ')}</b>. Mời Vũ sư ngủ. Từ đêm 2, Vũ sư dậy đầu tiên để lập vũ hội.</div>`;
     case 'QTASG': return SOLO.filter(on).map(k=>`<div class="note">${ROLES[k].n} là <b>số ${holders(k).join(', ')}</b>. Mời ${ROLES[k].n} ngủ. ${k==='matna'?'Từ đêm 2, Mặt nạ dậy ngay sau Vũ sư (trước bầy Sói) để dùng chức năng.':'Cuối đêm (sau Canh mộ) mới gọi dậy lại để soi.'}</div>`).join('');
-    case 'PACK': { if(qtAlone()){ const sk=soloKiller(), q=aliveHolders(sk)[0], SN=ROLES[sk].n;
+    case 'PACK': { if(qtAlone()&&soloKiller()==='matna'){ const t=tgt('PACK'), c=S.cur.PACK;
+        return `<div class="note">Bầy Sói đã bị loại hết. <b>Vẫn gọi "Sói dậy" và đếm giờ như bình thường</b> cho đúng nhịp, không ai thức, rồi bấm tiếp.</div><div class="note">Riêng quản trò: Mặt nạ đã giết ở lượt của mình: ${t!=null?'<b>số '+t+'</b>':c&&c.none?'không giết ai':'<b>chưa chọn</b> (quay lại lượt Mặt nạ để chọn)'}.</div>`; }
+      if(qtAlone()){ const sk=soloKiller(), q=aliveHolders(sk)[0], SN=ROLES[sk].n;
         return `<div class="note">Sói thường đã chết hết. <b>Gọi ${SN} (số ${q})</b> dậy: đêm nay ${SN} giết người. ${sk==='matna'?'Mặt nạ đã dùng chức năng ở đầu đêm.':'Lượt chức năng của '+SN+' vẫn ở cuối đêm.'}</div>`+pick(id,1,{title:SN+' giết ai?',dis:p=>p===q?'self':null,none:'🚫 '+SN+' không giết ai'}); }
       const sl=wolfSealed(), noBite=PACK_ROLES.filter(r=>r==='mynhan'||r==='acma').flatMap(holders);
       return specialWolvesNote()+tradeBlock()+puppetBlock()+(!packAlive()?'':sl!=null?`<div class="note bad">Phong ấn trúng Sói số ${sl}: đêm nay bầy <b>không được cắn</b>.</div>`:(xtWaiting()?xathuBlock()+'<div class="note">Xạ thủ chọn xong (hoặc bấm Không cho súng) thì vòng này chuyển sang chọn người bị cắn.</div>':(on('xathu')?xtBar():'')+pick(id,1,{title:'Bầy Sói cắn ai?',sub:'không thống nhất thì bấm Không cắn',dis:p=>noBite.includes(p)?'taken':null})+(noBite.length?'<div class="note">Sói Mỹ Nhân và Ác Ma không bị bầy cắn.</div>':''))); }
@@ -2369,6 +2376,7 @@ document.addEventListener('click',e=>{
     case 'jail': { const c=S.cur.quanguc; if(!c) break; c.c=c.c||{}; c.c[id]=c.c[id]===v?undefined:v; break; }
     case 'none': S.cur[id]={t:[],none:S.cur[id]&&S.cur[id].none?0:1}; break;
     case 'mnre': delete S.cur.matnaq; break;
+    case 'mkre': delete S.cur.matna; break;
     case 'xtre': delete S.cur.xtgive; break;
     case 'ttkind': { const c=S.cur.thantai=S.cur.thantai||{t:[]}; c.kind=c.kind===v?null:v; c.none=0; break; }
     case 'witch': S.cur.phuthuy={mode:v||null,t:null}; break;
