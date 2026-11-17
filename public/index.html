@@ -1028,7 +1028,7 @@ function stepsFor(night){
     if(id==='QTASG') return night===1&&SOLO.some(on);
     if(id==='XT0') return on('xathu');
     if(id==='XT1'||id==='XT2') return on('xathu')&&xtRecv().length>=(id==='XT1'?1:2); /* Sói săn nhận súng Xạ thủ: gọi cuối đêm */
-    if(id==='ttrecv') return on('thantai')&&!(S.tt&&S.tt.n<night); /* Người nhận quà Thần tài: tới khi quà đã gửi */
+    if(id==='ttrecv') return on('thantai'); /* Người nhận quà: gọi mỗi đêm cho đúng nhịp, kể cả sau khi quà đã dùng */
     if(id==='VSASG') return night===1&&on('vusu'); /* Vũ sư nhận số đầu đêm 1 */ /* Quỷ tượng nhận số đầu đêm 1, rồi ngủ */
     if(id==='PACK') return wolfCount()>0;
     if(id==='ROI') return false; /* Con Rối chọn ngay trong bước Bầy Sói đêm 1 */
@@ -1998,7 +1998,9 @@ function actionBlock(id){
       const c=S.cur.thantai||{}, me=aliveHolders('thantai')[0], o=ttTonight();
       const kinds=`<div class="row2" style="flex-wrap:wrap">${Object.entries(GIFT).map(([k,l])=>`<button class="pill ${c.kind===k?'on':''}" data-a="ttkind" data-v="${k}" style="${c.kind===k?'background:var(--gold);color:#1B2638':''}">${l}</button>`).join('')}</div>`;
       return `<div class="block"><h3>1 · Chọn món quà <span>cả ván chỉ gửi 1 món</span></h3>${kinds}</div>`+pick(id,1,{title:'2 · Tặng cho ai?',dis:p=>p===me?'self':null,none:'Không tặng quà đêm nay'})+(o?(o.wolf?`<div class="note bad">Riêng quản trò: số ${o.p} là <b>Sói</b>. Quà vô dụng, <b>Thần tài sẽ chết</b> đêm nay.</div>`:`<div class="note">Số ${o.p} là phe Tốt: nhận ${GIFT[o.kind]}, dùng ngay đêm nay ở lượt Người nhận quà.</div>`):''); }
-    case 'ttrecv': { if(S.tt&&S.tt.n<N) return '<div class="note">Quà đã dùng.</div>'; const o=ttTonight();
+    case 'ttrecv': { if(S.tt&&S.tt.n<N){ const t=S.tt, q=t.p;
+        if(t.kind==='sung'&&!t.wolf&&alive(q)){ const k=shootOk(q); return `<div class="result"><div class="r ${k.ok?'tot':'soi'}">${k.ok?'Được khai súng':'Không được khai súng'}</div><small>Người nhận súng Thần tài: số ${q}. ${k.ok?'Ra dấu 👍':'Ra dấu 👎 · '+k.why}</small></div>`; }
+        return `<div class="note">Quà đã dùng (đêm ${t.n}: ${GIFT[t.kind]} cho số ${q}${t.wolf?', là Sói nên vô dụng':''}). <b>Vẫn gọi Người nhận quà dậy cho đúng nhịp</b>, không ra dấu gì, rồi mời ngủ.${alive(q)?'':' (Số '+q+' đã bị loại.)'}</div>`; } const o=ttTonight();
       if(!o) return '<div class="note">Đêm nay Thần tài không tặng quà: không gọi ai, bấm tiếp.</div>';
       if(o.wolf) return `<div class="note bad">Người nhận (số ${o.p}) là Sói: quà vô dụng, không gọi dậy. Thần tài chết đêm nay.</div>`;
       if(o.kind==='sung') return `<div class="result"><div class="r tot">🔫 Nhận súng</div><small>Gọi số ${o.p} dậy, cho biết mình nhận 1 cây súng: khi bị loại được bắn 1 người (trúng độc hoặc chết vì Dệt mộng thì không được bắn).</small></div>`;
