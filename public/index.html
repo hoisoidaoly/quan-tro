@@ -783,6 +783,7 @@ body.night .task .who.tot{color:#9CC0E6}body.night .task .who.soi{color:#F0907C}
 .cursebar{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(142,181,240,.12);border:1.5px solid rgba(142,181,240,.5);color:#DCE6F3;font-size:14px;font-weight:600}
 .cursebar small{display:block;color:#AFC2DE;font-size:12px;margin-top:2px}
 .win.cc .winner{color:#A67C00}
+.win.p3 .winner{color:#7B3FA0}.winbar.p3{background:#7B3FA0}.rgrp.p3 .rgt{color:#7B3FA0}.rchip.p3{background:#7B3FA0}.stat.p3 b{color:#7B3FA0}.grp.p3{background:#7B3FA0}body.night .task .who.p3{color:#D3A6F0}.task .who.p3{color:#7B3FA0}
 .skip.on{background:var(--gold);color:var(--night);border-style:solid}
 .pill.gold{background:var(--gold);border-color:var(--gold);color:var(--night)}
 .seg2 button.on small{opacity:.95;color:#FCE3DC}
@@ -1041,7 +1042,7 @@ function stepsFor(night){
     return true;
   });
 }
-const assignRoles=id=>id==='ttrecv'||id==='XT0'||id==='XT1'||id==='XT2'?[]:id==='VSASG'?['vusu']:id==='vusu'?[]:id==='QTASG'?SOLO.filter(on):SOLO.includes(id)?[]:id==='PACK'?PACK_LATE.filter(on):id==='ROI'||id==='TRADE'||PACK_LATE.includes(id)?[]:[id];
+const assignRoles=id=>PSEUDO.includes(id)||id==='ttrecv'||id==='XT0'||id==='XT1'||id==='XT2'?[]:id==='VSASG'?['vusu']:id==='vusu'?[]:id==='QTASG'?SOLO.filter(on):SOLO.includes(id)?[]:id==='PACK'?PACK_LATE.filter(on):id==='ROI'||id==='TRADE'||PACK_LATE.includes(id)?[]:[id];
 const soloName=()=>SOLO.filter(on).map(k=>ROLES[k].n).join(', ')||'Sói dậy riêng';
 const stepName=id=>id==='XT0'?'Sói Xạ thủ':id==='XT1'?'Sói săn 1':id==='XT2'?'Sói săn 2':id==='ttrecv'?'Người nhận quà':id==='VSASG'?'Vũ sư nhận số':id==='QTASG'?soloName()+' nhận số':id==='PACK'?'Bầy Sói':id==='ROI'?(S.on.sansoi?'Sói săn chọn Con Rối':'Bầy Sói chọn Con Rối'):id==='TRADE'?'Sói giao dịch':ROLES[id].n;
 
@@ -1238,7 +1239,7 @@ function resolve(){
   const bite=packAlive()&&sealedWolf==null&&!packAsleep()?eff(biteRaw()):undefined;
   const protect=canUse('baove')?act('baove'):undefined;
   const wh=aliveHolders('phuthuy')[0], wok=canUse('phuthuy');
-  const healTo=wok&&c.phuthuy&&c.phuthuy.mode==='save'?eff(redirect(wh,biteRaw())):undefined;
+  const healTo=wok&&c.phuthuy&&c.phuthuy.mode==='save'&&c.phuthuy.st!=='cd'?eff(redirect(wh,biteRaw())):undefined;
   if(sealedWolf!=null&&tgt('PACK')!=null) notes.push('Phong ấn trúng Sói số '+sealedWolf+': bầy không được cắn đêm nay.');
   const dance=danceOutcome();
   if(bite!=null){
@@ -1413,19 +1414,19 @@ const WIN4=[10,11,13,14];
 const swingDefault=()=>([11,14].includes(S.n)||(S.n===13&&(setById(S.set)||{}).ssan))?(on('ngoc')?'ngoc':on('baove')?'baove':null):null;
 function swingRole(){ if(!WIN4.includes(S.n)) return null; const r=S.swing!==undefined?S.swing:swingDefault(); return r&&on(r)?r:null; }
 function winInfo(){
-  const all=nums(), side=p=>{ if(S.puppet===p) return 'soi'; const r=roleOf(p); return r?ROLES[r].t:'tot'; };
+  const all=nums(), side=p=>{ if(p3Side(p)) return 'p3'; if(S.puppet===p) return 'soi'; const r=roleOf(p); return r?ROLES[r].t:'tot'; };
   const gods=all.filter(p=>side(p)==='tot'&&!PLAIN.includes(roleOf(p))), plain=all.filter(p=>side(p)==='tot'&&PLAIN.includes(roleOf(p)));
-  const W=WIN4.includes(all.length), nW=all.filter(isWolfCard).length, sw=W?swingRole():null;
+  const W=WIN4.includes(all.length)||!!(S.rules&&S.rules.wolfN), nW=all.filter(isWolfCard).length, sw=W?swingRole():null;
   const dGroup=plain.concat(sw?gods.filter(p=>roleOf(p)===sw):[]);
   const need=k=>W?Math.min(nW,k):k;
   return {gods,dGroup,gNeed:need(gods.length),dNeed:need(dGroup.length),W,nW,sw};
 }
 function checkWin(){
   if(!S.assign.dan) return null; /* chưa xong đêm 1 */
-  const all=nums(), side=p=>{ if(S.puppet===p) return 'soi'; const r=roleOf(p); return r?ROLES[r].t:'tot'; };
+  const all=nums(), side=p=>{ if(p3Side(p)) return 'p3'; if(S.puppet===p) return 'soi'; const r=roleOf(p); return r?ROLES[r].t:'tot'; };
   const w=p=>isAfk(p)?0:(p===S.mayor?1.5:1)+(princessVote(p)?0.5:0), sum=a=>a.reduce((s,p)=>s+w(p),0);
   const wolfP=all.filter(p=>alive(p)&&side(p)==='soi'), goodP=all.filter(p=>alive(p)&&side(p)==='tot');
-  const wolves=sum(wolfP), good=sum(goodP);
+  const wolves=sum(wolfP), good=sum(goodP)+sum(all.filter(p=>alive(p)&&side(p)==='p3'));
   const gods=all.filter(p=>side(p)==='tot'&&!PLAIN.includes(roleOf(p)));
   const plain=all.filter(p=>side(p)==='tot'&&PLAIN.includes(roleOf(p)));
   const WI=winInfo(), gNeed=WI.gNeed, pNeed=WI.dNeed, dGroup=WI.dGroup;
@@ -1735,7 +1736,7 @@ function voteHtml(){
   return `<div class="votebox"><div class="vh"><b>Kiểm phiếu · ${head}</b><span>Ngày ${S.night}</span></div><div class="vb">${res}${body}${boomHtml()}${log}</div></div>`;
 }
 /* ===== SETUP VAI: nhóm thu gọn + tìm kiếm ===== */
-let roleQ='', openSide={tot:false,soi:false};
+let roleQ='', openSide={tot:false,soi:false,p3:false};
 const normVN=t=>String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
 function swingBox(){
   if(!WIN4.includes(S.n)) return '';
@@ -1802,6 +1803,7 @@ function render(){ try{ tradeLost(); }catch(e){} try{ const ab=document.getEleme
     <div class="rsearch"><input id="rsearch" data-rs="1" type="text" value="${esc(roleQ)}" placeholder="🔍 Tìm vai (vd: phu thuy, soi my)" autocomplete="off" enterkeyhint="search" aria-label="Tìm vai"><button data-a="rsclear" ${roleQ?'':'hidden'} aria-label="Xóa tìm kiếm">✕</button></div>
     ${roleGroup('tot','Phe Tốt',GOOD,row,`${GOOD.filter(on).length} vai`)}
     ${roleGroup('soi','Phe Sói',WOLF,row,`${wolfCount()} lá Sói`)}
+    ${roleGroup('p3','Phe thứ 3',P3R,row,`${P3R.filter(on).length} vai`)}
     <p class="rnone" id="rnone" hidden>Không tìm thấy vai nào.</p>
     <button class="fill" data-a="filldan">Điền Dân làng cho đủ ${S.n} người</button>`;
     cta='Tiếp: cài đặt đồng hồ ›'; ok=t===S.n&&wolfCount()>0;
@@ -1823,7 +1825,7 @@ function render(){ try{ tradeLost(); }catch(e){} try{ const ab=document.getEleme
   }
   if(hunterPending()&&!electing()){ ok=false; hint=hunterShooter().label+' số '+hunterShooter().h+' chọn số bắn hoặc bấm "Không bắn"'; }
   if(mayorPending()&&!electing()){ ok=false; hint='Thị trưởng đã bị loại: chọn người nhận phiếu hoặc xé phiếu'; }
-  if(S.step==='morning'&&S.win&&!mayorPending()&&!electing()){ html=`<div class="winbar ${S.win.side}">${S.win.side==='cc'?'Công chúa thắng riêng':(S.win.side==='soi'?'Phe Sói':'Phe Tốt')+' đạt điều kiện thắng'}</div>`+html; cta='Xem kết quả ›'; }
+  if(S.step==='morning'&&S.win&&!mayorPending()&&!electing()){ html=`<div class="winbar ${S.win.side}">${S.win.side==='p3'?'Phe thứ 3 thắng':S.win.side==='cc'?'Công chúa thắng riêng':(S.win.side==='soi'?'Phe Sói':'Phe Tốt')+' đạt điều kiện thắng'}</div>`+html; cta='Xem kết quả ›'; }
   $('#view').innerHTML=html; if(S.step==='roles') roleFilter(); const C=$('#cta'); C.textContent=cta; C.hidden=!cta; C.disabled=!ok; $('#hint').textContent=hint; $('#dockx').innerHTML=dock;
   renderSheet(); renderMenu(); renderEv(); startTimers(O);
 }
@@ -1933,7 +1935,7 @@ function isShooter(p,gh){ const r=roleOf(p); return (r==='thosan'||r==='sansoi'|
 function nightShooters(){ /* Thợ săn, Sói săn, Sói giữ Súng bị loại ban đêm: sáng chọn số bắn. Người có súng bị bắn trúng thì được bắn tiếp */
   if(S.step!=='morning'||!S.report) return [];
   const gh=S.report.gun!==undefined?S.report.gun:curGun(), D=S.shots||{};
-  const L=S.report.deaths.filter(p=>isShooter(p,gh)).map(p=>{
+  const L=S.report.deaths.concat(S.report.dbhOut||[]).filter(p=>isShooter(p,gh)).map(p=>{
     const r=roleOf(p), label=shooterLabel(p), w=(S.report.why[p]||'').toLowerCase();
     if(w.includes('độc')||w.includes('kéo theo')||w.includes('dệt mộng')) return {h:p,label,no:w.includes('độc')?'trúng độc':w.includes('kéo theo')?'bị kéo theo':'do Dệt mộng'};
     if(r==='thosan'&&(S.lastSleep||[]).includes(p)) return {h:p,label,no:'đang ngủ (lời nguyền Công chúa) khi bị loại'};
@@ -2052,22 +2054,22 @@ function actionBlock(id){
   }
 }
 /* ===== TỔNG KẾT VÁN ===== */
-const GRP={than:'Thần',dan:'Dân',soi:'Sói'};
-function grp(p){ if(S.puppet===p) return 'soi'; const r=roleOf(p)||'dan'; return ROLES[r].t==='soi'?'soi':PLAIN.includes(r)?'dan':'than'; }
-const sideOf=p=>grp(p)==='soi'?'soi':'tot';
+const GRP={than:'Thần',dan:'Dân',soi:'Sói',p3:'Phe 3'};
+function grp(p){ if(S.puppet===p) return 'soi'; const r=roleOf(p)||'dan'; if(P3R.includes(r)) return 'p3'; return ROLES[r].t==='soi'?'soi':PLAIN.includes(r)?'dan':'than'; }
+const sideOf=p=>p3Side(p)?'p3':grp(p)==='soi'?'soi':'tot';
 function reviewHtml(){
   const ps=nums();
   const stat=g=>{const a=ps.filter(p=>grp(p)===g); return `<div class="stat ${g}"><b>${a.filter(alive).length}/${a.length}</b><span>${GRP[g]} còn sống</span></div>`;};
   const rows=ps.map(p=>{const r=roleOf(p)||'dan', g=grp(p), tags=[];
-    if(S.puppet===p) tags.push('Con Rối'); if(ccOn()&&S.princess===p&&S.princess!==princeSeat()&&S.pOk) tags.push('Công chúa'+(S.pWoke?' (đã tỉnh)':'')); if(S.mayor===p) tags.push('Thị trưởng'); if(S.model===p) tags.push('Hình mẫu Con lai'); if(S.gun===p) tags.push('Giữ Súng'); if(S.trade.poison===p&&S.trade.phase==='poison') tags.push('Giữ Bình Độc');
-    const award=S.step==='end'&&S.win?((S.win.side==='cc'?p===S.princess:sideOf(p)===S.win.side)?`<button class="awd mvp ${S.mvp===p?'on':''}" data-a="mvp" data-v="${p}">🏆 MVP</button>`:`<button class="awd svp ${S.svp===p?'on':''}" data-a="svp" data-v="${p}">🥈 SVP</button>`):'';
+    if(S.puppet===p) tags.push('Con Rối'); { const ct=cdTag(p); if(ct) tags.push(ct); } if(ccOn()&&S.princess===p&&S.princess!==princeSeat()&&S.pOk) tags.push('Công chúa'+(S.pWoke?' (đã tỉnh)':'')); if(S.mayor===p) tags.push('Thị trưởng'); if(S.model===p) tags.push('Hình mẫu Con lai'); if(S.gun===p) tags.push('Giữ Súng'); if(S.trade.poison===p&&S.trade.phase==='poison') tags.push('Giữ Bình Độc');
+    const award=S.step==='end'&&S.win?((S.win.side==='cc'?p===S.princess:S.win.side==='p3'?p3Side(p):sideOf(p)===S.win.side)?`<button class="awd mvp ${S.mvp===p?'on':''}" data-a="mvp" data-v="${p}">🏆 MVP</button>`:`<button class="awd svp ${S.svp===p?'on':''}" data-a="svp" data-v="${p}">🥈 SVP</button>`):'';
     return `<tr class="${alive(p)?'':'dd'} ${S.mvp===p?'is-mvp':''} ${S.svp===p?'is-svp':''}"><td>${p}</td><td><span class="grp ${g}">${GRP[g]}</span></td><td>${pname(p)?`<div class="pn">${esc(pname(p))}</div>`:''}<b>${esc(ROLES[r].n)}</b> ${S.mvp===p?'<span class="st mvpt">🏆 MVP</span>':''}${S.svp===p?'<span class="st svpt">🥈 SVP</span>':''}${tags.map(t=>`<span class="st">${t}</span>`).join('')}<div class="fate">${alive(p)?'Còn sống':esc(S.deathAt[p]||'Đã bị loại')}</div>${award}</td></tr>`;}).join('');
   const tl=S.tl.map(g=>`<div class="tlg"><h3>${esc(g.ph)}</h3><ul>${g.items.map(i=>i.d!=null
     ?`<li class="die"><span class="dn">${i.d}</span>${pname(i.d)?esc(pname(i.d))+' · ':''}${esc(ROLES[roleOf(i.d)]?.n||'')} · ${esc(i.t)}</li>`
     :`<li class="${i.ok?'calm':''}">${esc(i.t)}</li>`).join('')}</ul></div>`).join('');
   const aw=(k,lb,ic)=>{ const p=S[k]; return `<div class="awcard ${k}"><span>${ic} ${lb}</span>${p!=null?`<b>Số ${p}</b><em>${pname(p)?esc(pname(p))+' · ':''}${esc(ROLES[roleOf(p)||'dan'].n)}</em>`:'<em>Chưa chọn</em>'}</div>`; };
   const awards=S.step==='end'&&S.win?`<div class="awrow">${aw('mvp','MVP · phe thắng','🏆')}${aw('svp','SVP · phe thua','🥈')}</div><p class="awtip">Chạm nút 🏆 MVP (người chơi tốt nhất phe thắng) hoặc 🥈 SVP (người chơi tốt nhất phe thua) ở từng số bên dưới.</p>`:'';
-  return `<div class="stats">${stat('than')}${stat('dan')}${stat('soi')}</div>${awards}
+  return `<div class="stats">${stat('than')}${stat('dan')}${stat('soi')}${ps.some(p=>grp(p)==='p3')?stat('p3'):''}</div>${awards}
   <div class="side" style="margin-top:24px"><h2>Bài của từng số</h2><span>${ps.length} người</span></div>
   <div class="rbox"><table class="tbl rev"><tbody>${rows}</tbody></table></div>
   <div class="side" style="margin-top:24px"><h2>Diễn biến ván</h2><span>${S.night} đêm</span></div>
@@ -2078,8 +2080,8 @@ function reviewHtml(){
 function endSummary(){
   const ps=nums(), d=new Date();
   return {when:d.toLocaleString('vi-VN'),win:S.win,nights:S.night,set:S.set?setLabel():'',n:ps.length,
-    stats:['than','dan','soi'].map(g=>{const a=ps.filter(p=>grp(p)===g); return [GRP[g],a.filter(alive).length,a.length,g];}),
-    rows:ps.map(p=>{const r=roleOf(p)||'dan', tags=[]; if(S.puppet===p) tags.push('Con Rối'); if(ccOn()&&S.princess===p&&S.princess!==princeSeat()&&S.pOk) tags.push('Công chúa'+(S.pWoke?' (đã tỉnh)':'')); if(S.mayor===p) tags.push('Thị trưởng'); if(S.model===p) tags.push('Hình mẫu Con lai');
+    stats:['than','dan','soi'].concat(ps.some(p=>grp(p)==='p3')?['p3']:[]).map(g=>{const a=ps.filter(p=>grp(p)===g); return [GRP[g],a.filter(alive).length,a.length,g];}),
+    rows:ps.map(p=>{const r=roleOf(p)||'dan', tags=[]; if(S.puppet===p) tags.push('Con Rối'); { const ct=cdTag(p); if(ct) tags.push(ct); } if(ccOn()&&S.princess===p&&S.princess!==princeSeat()&&S.pOk) tags.push('Công chúa'+(S.pWoke?' (đã tỉnh)':'')); if(S.mayor===p) tags.push('Thị trưởng'); if(S.model===p) tags.push('Hình mẫu Con lai');
       if(S.mvp===p) tags.unshift('🏆 MVP'); if(S.svp===p) tags.unshift('🥈 SVP');
       return {p,name:pname(p),role:ROLES[r].n,g:grp(p),tags,fate:alive(p)?'Còn sống':(S.deathAt[p]||'Đã bị loại'),alive:alive(p)};}),
     mvp:S.mvp!=null?{p:S.mvp,name:pname(S.mvp),role:ROLES[roleOf(S.mvp)||'dan'].n}:null,
@@ -2100,7 +2102,7 @@ function drawSummary(sm,part){
     x.font=F(600,30); const rl=wrap(sm.win.reason,W-2*pad-80); const bh=230+rl.length*40;
     R(pad,y,W-2*pad,bh,C.paper,20); if(draw){ x.strokeStyle=C.bark; x.lineWidth=4; x.beginPath(); x.roundRect?x.roundRect(pad,y,W-2*pad,bh,20):x.rect(pad,y,W-2*pad,bh); x.stroke(); }
     T(`VÁN ${sm.n} NGƯỜI · ${sm.nights} ĐÊM${sm.set?' · '+sm.set.toUpperCase():''}`,W/2,y+60,F(700,24),C.mute,'center');
-    T(winName(sm.win.side).toUpperCase(),W/2,y+145,F(600,sm.win.side==='cc'?58:76,'d'),sm.win.side==='cc'?'#A67C00':sw?C.wolf:C.village,'center');
+    T(winName(sm.win.side).toUpperCase(),W/2,y+145,F(600,sm.win.side==='cc'||sm.win.side==='p3'?58:76,'d'),sm.win.side==='p3'?'#7B3FA0':sm.win.side==='cc'?'#A67C00':sw?C.wolf:C.village,'center');
     rl.forEach((l,i)=>T(l,W/2,y+200+i*40,F(600,30),C.mute,'center')); y+=bh+30;
     if(part!=='tl'){ const cw=(W-2*pad-40)/3; sm.stats.forEach(([n,a,t,g],i)=>{ const cx=pad+i*(cw+20); R(cx,y,cw,120,C.paper); T(a+'/'+t,cx+cw/2,y+62,F(700,46,'m'),g==='soi'?C.wolf:g==='dan'?C.ok:C.village,'center'); T(n+' còn sống',cx+cw/2,y+100,F(700,24),C.mute,'center'); }); y+=150;
     if(sm.mvp||sm.svp){ const aw=[['🏆 MVP · PHE THẮNG',sm.mvp,'#C9A24A'],['🥈 SVP · PHE THUA',sm.svp,'#9AA4AB']]; const aw2=(W-2*pad-20)/2;
@@ -2161,13 +2163,15 @@ function demonResult(p){
 function witchBlock(){
   const c=S.cur.phuthuy||{}, me=aliveHolders('phuthuy')[0];
   const sl=wolfSealed(), bite=packAlive()&&sl==null?eff(biteRaw()):undefined;
-  let info=S.witch.save?'Đã dùng bình Cứu nên không được biết ai bị cắn.':bite!=null?`Đêm nay có <b>số ${bite}</b> bị loại (bị cắn).`:'Đêm nay không ai bị cắn: ra hiệu 👋.';
-  const canSave=!S.witch.save&&bite!=null&&bite!==me, canPoison=!S.witch.poison&&!asleep(me);
+  const cdv=cdVictim();
+  let info=S.witch.save?'Đã dùng bình Cứu nên không được biết ai bị cắn.':bite!=null||cdv!=null?`Đêm nay có <b>số ${[bite,cdv].filter(x=>x!=null).join(' và số ')}</b> bị loại${cdv!=null?' (bị cắn / bị '+cdKillerName()+' giết)':' (bị cắn)'}.`:'Đêm nay không ai bị cắn: ra hiệu 👋.';
+  const canSave=!S.witch.save&&((bite!=null&&bite!==me)||(cdv!=null&&cdv!==me)), canPoison=!S.witch.poison&&!asleep(me);
   let h=(S.witch.save&&S.witch.poison?'<div class="note bad">Riêng quản trò: Phù thủy đã dùng hết cả 2 bình. Vẫn gọi dậy cho đúng nhịp, không chọn được bình nào.</div>':'')+(asleep(me)?'<div class="note bad">Phù thủy đang ngủ (lời nguyền Công chúa): <b>không dùng được bình Độc</b>, bình Cứu vẫn dùng được.</div>':'')+`<div class="note">${info}${bite===me&&!S.witch.save?' Phù thủy không được tự cứu.':''} Cứu thì giơ 👍, ném độc thì chỉ 1 số.</div>
   <div class="block"><h3>Dùng bình nào? <span>chỉ 1 bình mỗi đêm</span></h3><div class="seg">
   <button class="${c.mode==='save'?'on':''}" data-a="witch" data-v="save" ${canSave?'':'disabled'}>Cứu${S.witch.save?' (đã dùng)':''}</button>
   <button class="${c.mode==='poison'?'on':''}" data-a="witch" data-v="poison" ${canPoison?'':'disabled'}>Độc${S.witch.poison?' (đã dùng)':''}</button>
   <button class="${!c.mode?'on':''}" data-a="witch" data-v="">Không dùng</button></div></div>`;
+  if(c.mode==='save'&&bite!=null&&cdv!=null&&!S.witch.save) h+=`<div class="block"><h3>Cứu ai?</h3><div class="seg"><button class="${c.st!=='cd'?'on':''}" data-a="wst" data-v="" ${bite===me?'disabled':''}>Số ${bite} (bị cắn)</button><button class="${c.st==='cd'?'on':''}" data-a="wst" data-v="cd" ${cdv===me?'disabled':''}>Số ${cdv} (bị ${cdKillerName()} giết)</button></div></div>`;
   if(c.mode==='poison') h+=`<div class="block"><h3>Đầu độc ai?</h3>${numGrid(c.t!=null?[c.t]:[],{mode:'wpo',id:'phuthuy',disabledFn:p=>!alive(p)?'dead':null})}</div>`;
   return h;
 }
@@ -2537,7 +2541,7 @@ function renderNight(){
   const steps=stepsFor(S.night), id=steps[S.idx], last=S.idx===steps.length-1;
   $('#phase').textContent='Đêm '+S.night+' · '+stepName(id);
   const isPack=id==='PACK', isRoi=id==='ROI', isTrade=id==='TRADE', isQa=id==='QTASG'||id==='VSASG'||id==='ttrecv'||id==='XT0'||id==='XT1'||id==='XT2';
-  const side=id==='ttrecv'||id==='VSASG'?'tot':isPack||isRoi||isTrade||isQa?'soi':ROLES[id].t;
+  const side=id==='ttrecv'||id==='VSASG'?'tot':isPack||isRoi||isTrade||isQa?'soi':(P3R.includes(id)||ROLES[id].t==='p3')?'p3':ROLES[id].t;
   let body='', ok=true, hint=''; UIB=null; let task=TASK[id]||stepName(id); if(isPack&&qtAlone()) task=ROLES[soloKiller()].n+' giết ai?';
   const asg=S.night===1?assignRoles(id).find(r=>holders(r).length<need(r)):null;
   if(asg){ const q=need(asg), cur=holders(asg); task='Chọn '+ROLES[asg].n; ok=false; hint=q>1?`Chạm ${q} ghế đang giơ tay (${cur.length}/${q})`:'Chạm ghế người đang giơ tay'; body=asgRing(asg,cur,q); }
@@ -2581,7 +2585,7 @@ function renderNight(){
     QTASG:soloName()+' nhắm mắt giơ tay để quản trò biết số. Không dậy cùng bầy Sói. Xác nhận rồi mời ngủ, '+(on('matna')?'từ đêm 2 dậy ngay sau Vũ sư.':'cuối đêm mới gọi dậy lại.'),
     kysi:'Kỵ sĩ nhắm mắt giơ tay. Xác nhận rồi mời ngủ.'}[id]||ROLES[id].d;
   const sec=isPack?(S.night===1?90:30):S.opt.nSec, useT=S.opt.nT&&!asg;
-  const html=`${queue}<div class="task"><div style="flex:1;min-width:0"><div class="who ${side}">Phe ${side==='soi'?'Sói':'Tốt'} · ${esc(stepName(id))}${ROLES[id]?.pending?' · Chờ cơ chế':''}</div><h1>${esc(task)}</h1>${useT?`<span class="tmr" id="ntm">⏱ ${sec}s</span>`:''}</div><button class="info" data-a="rinfo" aria-label="Xem luật">i</button></div>
+  const html=`${queue}<div class="task"><div style="flex:1;min-width:0"><div class="who ${side}">Phe ${side==='soi'?'Sói':side==='p3'?'thứ 3':'Tốt'} · ${esc(stepName(id))}${ROLES[id]?.pending?' · Chờ cơ chế':''}</div><h1>${esc(task)}</h1>${useT?`<span class="tmr" id="ntm">⏱ ${sec}s</span>`:''}</div><button class="info" data-a="rinfo" aria-label="Xem luật">i</button></div>
   ${ruleOpen?`<div class="rule">${esc(actTxt)}</div>`:''}${sealBanner()}${mimaBar()}${curseBanner()}${body}`;
   return {html,cta:last?'Xong · Trời sáng ›':'Xong · Gọi vai tiếp ›',ok,hint,tkey:useT?'n'+S.night+'-'+S.idx:null,tsec:sec};
 }
@@ -2683,7 +2687,7 @@ function hunterShotHtml(){
     <div class="row2"><button class="pill red" data-a="sgo" ${sel==null?'disabled':''}>${sel==null?'Chọn số bị bắn':'Bắn số '+sel}</button><button class="pill" data-a="snone">Không bắn</button></div></div>`+sum; }
 /* Người bị loại ban ngày có súng (Thợ săn, Sói săn, Sói giữ Súng): được bắn 1 người */
 function dayShooters(blockedOut){ const dd=dayDrag(), gun=curGun(), out=new Set([...S.dayPick,...(dd!=null?[dd]:[])].filter(p=>!isAfk(p)));
-  return [...out].flatMap(p=>roleOf(p)==='xathu'&&xtGuns()>=2&&!S.dayWhy[p]?.includes('độc')?[p,p+0.5]:[p]).filter(p=>{ if(p%1){ return !(p in S.dshot); } const r=roleOf(p); if(!((r==='thosan'||r==='sansoi'||p===gun||extraGun(p)>0)&&S.puppet!==p&&p!==dd&&!(p in S.dshot)&&!S.dayWhy[p]?.includes('độc'))) return false;
+  return [...out].flatMap(p=>roleOf(p)==='xathu'&&xtGuns()>=2&&!S.dayWhy[p]?.includes('độc')?[p,p+0.5]:[p]).filter(p=>{ if(p%1){ return !(p in S.dshot); } const r=roleOf(p); if(!((r==='thosan'||r==='sansoi'||p===gun||extraGun(p)>0)&&S.puppet!==p&&p!==dd&&!(p in S.dshot)&&!S.dayWhy[p]?.includes('độc')&&!S.dayWhy[p]?.includes('cặp đôi'))) return false;
     if(r==='thosan'){ const why=asleep(p)?'đang ngủ (lời nguyền Công chúa)':lastGodOut(p,out)?'là Thần cuối cùng còn sống':null; if(why){ if(blockedOut) blockedOut.push({p,why}); return false; } }
     return true; }); }
 function dayHints(){
@@ -2742,6 +2746,7 @@ function vMorning(){
   ${muteBox()}
   ${S.bear&&S.bear.night===S.night?`<div class="box ${S.bear.roar?'red':'blue'}"><h3>🐻 ${S.bear.roar?'Gấu gầm':'Gấu không gầm'}</h3><p>Thông báo cho cả bàn. Riêng quản trò: ${esc(S.bear.why)}.</p></div>`:''}
   ${R.deaths.filter(p=>S.puppet===p&&(roleOf(p)==='thosan'||roleOf(p)==='sansoi')).map(voidAlert).join('')}
+  ${dbhHtml()}
   ${dnHtml()}
   ${hunterShotHtml()}
   ${S.mayor&&S.dead[S.mayor]?mayorTransferHtml([]):''}
@@ -2798,6 +2803,7 @@ function vDay(){
       ${out.filter(p=>S.puppet===p&&['thosan','ngoc'].includes(roleOf(p))).map(voidAlert).join('')}
       ${!w?sh.slice(0,1).map(p=>`<div class="box red"><h3>🔫 ${p%1?'Xạ thủ số '+Math.floor(p)+' · song tiễn phát 2':esc(extraGun(p)?shooterLabel(p):(ROLES[roleOf(p)]?.n||'Sói giữ Súng'))+' số '+p} được bắn</h3><p>Chạm người bị bắn, hoặc bấm Không bắn.</p>${dRing({act:'dshot',id:String(p),deadFn:q=>!onT(q)||q===Math.floor(p)})}<button class="ghost" data-a="dshot" data-id="${p}" data-v="">Không bắn</button></div>`).join(''):''}
       ${shNo.map(x=>`<div class="box"><h3>Thợ săn số ${x.p} không được bắn</h3><p>Vì ${esc(x.why)}.</p></div>`).join('')}
+      ${dbhHtml()}
       ${dayHints().map(h=>`<div class="hintbox">${esc(h)}</div>`).join('')}
       ${S.mayor&&(S.dayPick.includes(S.mayor)||dd===S.mayor)?mayorTransferHtml(S.dayPick):''}
       ${dRing({cls:p=>out.includes(p)?'on':'',deadFn:p=>!!S.dead[p]})}`;
@@ -2960,7 +2966,7 @@ function packAsleep(){ const w=PACK_ROLES.flatMap(aliveHolders); return w.length
 function lastGodOut(h,dying){ if(!S.rules||!S.rules.lastGod) return false; return !nums().some(p=>p!==h&&alive(p)&&!(dying&&dying.has(p))&&grp(p)==='than'); }
 function bearNeighbors(g){ const P=nums(), n=P.length, i=P.indexOf(g), out=[];
   for(const d of [-1,1]){ for(let k=1;k<n;k++){ const q=P[((i+d*k)%n+n)%n]; if(q!==g&&alive(q)){ if(!out.includes(q)) out.push(q); break; } } } return out; }
-const winName=side=>side==='cc'?'Công chúa thắng riêng':side==='soi'?'Phe Sói thắng':'Phe Tốt thắng';
+const winName=side=>side==='p3'?'Phe thứ 3 thắng':side==='cc'?'Công chúa thắng riêng':side==='soi'?'Phe Sói thắng':'Phe Tốt thắng';
 
 /* Kết thúc đêm: Gấu gầm, Hoàng tử đánh thức Công chúa, ghi nhận ai đang ngủ */
 const _finishNight=finishNight;
@@ -3389,6 +3395,136 @@ document.addEventListener('change',e=>{ const k=e.target&&e.target.dataset&&e.ta
 document.addEventListener('click',e=>{ if(!evSheet||evSheet.k!=='ov') return; const t=e.target;
   if(t.closest('#evsheet .pane')&&!t.closest('button')&&t.closest('input,label,summary,details,select,textarea')) e.stopPropagation(); },true);
 if(OV.pin) ovCheckPin();
+
+/* ================= PHE THỨ 3: set Đường Bá Hổ điểm Thu Hương · set Cô dâu ma ================= */
+ROLES.duongbaho={n:'Đường Bá Hổ',t:'tot',d:'Phe thứ 3. Đêm 1 dậy để quản trò biết số. Khi bị loại (bất kỳ cách nào) hoặc sáng sau đêm 2 nếu còn sống: lật bài công khai, chọn 1 người. Chọn đúng Thu Hương: phe thứ 3 thắng ngay. Chọn sai: phe thứ 3 thua (vẫn chơi tiếp nhưng không thắng). Chọn trúng Thợ săn: Thợ săn bị loại và được bắn. Tiên tri soi ra Tốt.'};
+ROLES.thuhuong={n:'Thu Hương',t:'tot',d:'Phe thứ 3. Đêm 1 dậy, được quản trò chỉ cho biết ai là Đường Bá Hổ. Thu Hương bị loại thì phe thứ 3 thua (vẫn chơi tiếp nhưng không thắng). Tiên tri soi ra Tốt.'};
+ROLES.codauma={n:'Cô dâu ma',t:'tot',d:'Phe thứ 3. Đêm 1 chọn 1 người làm Chú rể, rồi cặp đôi cùng chọn Người chứng hôn. Chú rể và Người chứng hôn giữ chức năng gốc nhưng về phe thứ 3. Cặp đôi chết cùng nhau. Phe Sói chết hết thì cặp đôi được giết người mỗi đêm; cặp đôi chết thì Người chứng hôn được giết người mỗi đêm. Thắng khi loại hết 2 phe còn lại. Tiên tri soi ra Tốt.'};
+ROLES.CDPAIR={n:'Cô dâu & Chú rể',t:'p3',mech:1,d:'Cô dâu ma và Chú rể cùng dậy, chọn 1 người làm Người chứng hôn.'};
+ROLES.CDWIT={n:'Người chứng hôn',t:'p3',mech:1,d:'Người chứng hôn dậy, quản trò chỉ cho biết cặp đôi là ai.'};
+ROLES.cdkill={n:'Phe Cô dâu giết',t:'p3',mech:1,d:'Phe Sói chết hết thì cặp đôi dậy giết 1 người; cặp đôi đã chết thì Người chứng hôn dậy giết 1 người. Bảo vệ và bình Cứu chặn được như vết cắn Sói.'};
+const P3R=['duongbaho','thuhuong','codauma'];
+const PSEUDO=['CDPAIR','CDWIT','cdkill'];
+['codauma','thuhuong','duongbaho'].forEach(k=>{ if(!ORDER.includes(k)) ORDER.unshift(k); });
+TASK.duongbaho='Đường Bá Hổ nhận số'; TASK.thuhuong='Thu Hương nhận số'; TASK.codauma='Cô dâu ma chọn Chú rể'; TASK.CDPAIR='Cặp đôi chọn Người chứng hôn'; TASK.CDWIT='Người chứng hôn biết cặp đôi'; TASK.cdkill='Phe Cô dâu ma giết người';
+if(!SETS.some(s=>s.id==='dbh')) SETS.push({id:'dbh',n:'Đường Bá Hổ điểm Thu Hương',on:['tientri','phuthuy','thosan','duongbaho','thuhuong'],dan:4,soi:3,rules:{wolfN:1}});
+if(!SETS.some(s=>s.id==='codau')) SETS.push({id:'codau',n:'Cô dâu ma',on:['baove','tientri','phuthuy','thosan','codauma'],dan:4,soi:3});
+
+/* ---------- Cô dâu ma ---------- */
+const cdBride=()=>on('codauma')?holders('codauma')[0]:undefined;
+const cdG=()=>!on('codauma')?undefined:S.cd?S.cd.g:(S.step==='night'&&S.night===1?tgt('codauma'):undefined);
+const cdW=()=>!on('codauma')?undefined:S.cd?S.cd.w:(S.step==='night'&&S.night===1?tgt('CDPAIR'):undefined);
+function p3Side(p){ if(p==null) return false; const r=roleOf(p); if(r&&P3R.includes(r)) return true; return on('codauma')&&(p===cdG()||p===cdW()); }
+function cdTag(p){ if(!on('codauma')) return ''; return p===cdG()?'Chú rể (phe 3)':p===cdW()?'Người chứng hôn (phe 3)':''; }
+/* Phe Sói (trừ Sói đã về phe 3) còn ai sống không */
+const cdWolvesLeft=()=>nums().some(p=>alive(p)&&isWolfSide(p)&&!p3Side(p));
+function cdKiller(){ if(!on('codauma')||S.night<2) return null; const b=cdBride(), g=cdG(), w=cdW(); if(b==null||g==null) return null;
+  if(alive(b)&&alive(g)) return cdWolvesLeft()?null:{who:'couple',ps:[b,g]};
+  if(w!=null&&alive(w)) return {who:'wit',ps:[w]}; return null; }
+function cdKillerName(){ const k=cdKiller(); return k&&k.who==='wit'?'Người chứng hôn':'cặp đôi'; }
+function cdVictim(){ if(S.step!=='night') return null; const k=cdKiller(); if(!k) return null; const t=tgt('cdkill'); return t!=null&&alive(t)?t:null; }
+{ const _pa=packAlive; packAlive=function(){ if(!on('codauma')) return _pa(); return nums().some(p=>alive(p)&&PACK_ROLES.includes(roleOf(p))&&!p3Side(p)); }; }
+{ const _sf=stepsFor; stepsFor=function(n){ let st=_sf(n); if(!on('codauma')) return st;
+  st=st.filter(x=>!PSEUDO.includes(x));
+  if(n===1){ const i=st.indexOf('codauma'); st.splice(i+1,0,'CDPAIR','CDWIT'); }
+  else { const i=st.indexOf('PACK'); if(i>=0) st.splice(i+1,0,'cdkill'); else { const j=st.indexOf('phuthuy'); st.splice(j>=0?j:st.length,0,'cdkill'); } }
+  const ti=st.indexOf('tientri'), wi=st.indexOf('phuthuy'); if(ti>wi&&wi>=0){ st.splice(ti,1); st.splice(st.indexOf('phuthuy'),0,'tientri'); } /* set Cô dâu ma: Tiên tri trước Phù thủy */
+  return st; }; }
+function cdBlock(id){ const b=cdBride(), g=cdG(), w=cdW();
+  if(id==='codauma'){ if(S.night!==1) return '<div class="note">Không có chức năng đêm.</div>';
+    return pick('codauma',1,{title:`Cô dâu ma (số ${b}) chọn ai làm Chú rể?`,dis:p=>p===b?'self':null,none:false}); }
+  if(id==='CDPAIR'){ if(g==null) return '<div class="note bad">Chưa chọn Chú rể. Quay lại bước Cô dâu ma.</div>';
+    return `<div class="note">Gọi <b>Cô dâu ma (số ${b})</b> và <b>Chú rể (số ${g})</b> cùng dậy, nhận mặt nhau, rồi cùng chọn Người chứng hôn.</div>`+pick('CDPAIR',1,{title:'Chọn Người chứng hôn',dis:p=>p===b||p===g?'self':null,none:false}); }
+  if(id==='CDWIT'){ if(w==null) return '<div class="note bad">Chưa chọn Người chứng hôn. Quay lại bước trước.</div>';
+    return `<div class="result"><div class="r">💍 Cặp đôi: số ${b} và số ${g}</div><small>Gọi <b>Người chứng hôn (số ${w})</b> dậy, chỉ cho biết cặp đôi là số ${b} (Cô dâu ma) và số ${g} (Chú rể). Từ giờ số ${g} và số ${w} thuộc phe thứ 3 nhưng vẫn giữ chức năng gốc.</small></div>`; }
+  if(id==='cdkill'){ const k=cdKiller();
+    if(!k){ const why=b==null||g==null?'Chưa có cặp đôi.':alive(b)&&alive(g)?'Phe Sói còn sống nên cặp đôi chưa được giết người.':'Cặp đôi và Người chứng hôn đều đã bị loại.';
+      return `<div class="note">${why} Vẫn gọi cho đúng nhịp, ra hiệu ❌ rồi mời ngủ.</div>`; }
+    const nm=k.who==='couple'?`Cặp đôi (số ${b} và ${g})`:`Người chứng hôn (số ${w})`;
+    return `<div class="note">${k.who==='couple'?'Phe Sói đã chết hết':'Cặp đôi đã chết'}: gọi <b>${nm}</b> dậy giết 1 người. Bảo vệ và bình Cứu chặn được như vết cắn Sói.</div>`+pick('cdkill',1,{title:nm+' giết ai?',dis:p=>k.ps.includes(p)?'self':null,none:'🚫 Không giết ai'}); }
+  return ''; }
+/* ---------- Đường Bá Hổ ---------- */
+function dbhBlock(id){ const b=holders('duongbaho')[0], th=holders('thuhuong')[0];
+  if(id==='duongbaho') return `<div class="note">Đường Bá Hổ dậy để quản trò biết số. Khi bị loại hoặc sáng sau đêm 2 (nếu còn sống) sẽ lật bài chọn Thu Hương.</div>`;
+  if(id==='thuhuong') return b==null?'<div class="note bad">Chưa gán số Đường Bá Hổ.</div>':`<div class="result"><div class="r">Đường Bá Hổ là số ${b}</div><small>Chỉ cho Thu Hương${th!=null?' (số '+th+')':''} biết Đường Bá Hổ là <b>số ${b}${pname(b)?' · '+esc(pname(b)):''}</b>.</small></div>`;
+  return ''; }
+{ const _ab=actionBlock; actionBlock=function(id){ if(['codauma','CDPAIR','CDWIT','cdkill'].includes(id)) return cdBlock(id); if(id==='duongbaho'||id==='thuhuong') return dbhBlock(id); return _ab(id); }; }
+{ const _rn=renderNight; renderNight=function(){ const o=_rn(), id=stepsFor(S.night)[S.idx];
+  if(o.ok&&S.night===1){ if(id==='codauma'&&cdBride()!=null&&tgt('codauma')==null){ o.ok=false; o.hint='Chọn Chú rể'; }
+    if(id==='CDPAIR'&&tgt('CDPAIR')==null){ o.ok=false; o.hint='Chọn Người chứng hôn'; } }
+  return o; }; }
+{ const _na=nightActs; nightActs=function(){ const a=_na(); if(on('codauma')){ const b=cdBride();
+    if(S.night===1&&tgt('codauma')!=null) a.push('Cô dâu ma (số '+b+') chọn Chú rể số '+tgt('codauma'));
+    if(S.night===1&&tgt('CDPAIR')!=null) a.push('Cặp đôi chọn Người chứng hôn số '+tgt('CDPAIR'));
+    const k=cdKiller(); if(k&&tgt('cdkill')!=null) a.push((k.who==='couple'?'Cặp đôi':'Người chứng hôn')+' giết số '+tgt('cdkill')); }
+  return a; }; }
+{ const _fn=finishNight; finishNight=function(){ if(on('codauma')&&S.night===1&&!S.cd) S.cd={g:tgt('codauma')??null,w:tgt('CDPAIR')??null}; return _fn(); }; }
+/* Kết quả đêm: phe Cô dâu giết (chặn được như vết cắn), cặp đôi chết cùng nhau */
+{ const _rs=resolve; resolve=function(){ const r=_rs(); if(!on('codauma')) return r;
+  const D=r.why, add=(p,why)=>{ if(p!=null&&alive(p)&&!D[p]){ D[p]=why; r.order.push(p); return true; } return false; };
+  const k=cdKiller(), t=k?tgt('cdkill'):null;
+  if(t!=null&&alive(t)&&!D[t]){ const c=S.cur.phuthuy, wok=canUse('phuthuy');
+    const bite=packAlive()&&wolfSealed()==null&&!packAsleep()?eff(biteRaw()):undefined;
+    const guarded=canUse('baove')&&act('baove')===t, healed=wok&&c&&c.mode==='save'&&(c.st==='cd'||bite==null);
+    const by=k.who==='couple'?'cặp đôi Cô dâu ma':'Người chứng hôn';
+    if(guarded&&healed) add(t,'Bảo vệ và bình Cứu cùng lúc, sốc thuốc');
+    else if(guarded) r.notes.push('Bảo vệ đỡ được nhát giết của '+by+' vào số '+t+'.');
+    else if(healed) r.notes.push('Phù thủy cứu số '+t+' (bị '+by+' giết).');
+    else add(t,'Bị '+by+' giết'); }
+  const b=cdBride(), g=cdG();
+  if(b!=null&&g!=null){ [[b,g],[g,b]].forEach(([x,y])=>{ if(D[x]&&add(y,'Bị kéo theo cặp đôi (Cô dâu ma)')) r.notes.push('Số '+x+' bị loại nên '+(y===g?'Chú rể':'Cô dâu ma')+' số '+y+' bị kéo theo (cặp đôi chết cùng nhau).'); }); }
+  r.order.filter(p=>!r.deaths.includes(p)).forEach(p=>{ const ro=roleOf(p); if(ro==='thosan'||ro==='sansoi') r.notes.push((ro==='thosan'?'Thợ săn':'Sói săn')+' (số '+p+') bị loại: '+(D[p].includes('kéo theo')?'KHÔNG được bắn vì bị kéo theo.':'được bắn 1 người.')); });
+  r.deaths=Object.keys(D).map(Number).sort((a,b)=>a-b); return r; }; }
+/* Thắng: Cô dâu ma thắng khi loại hết 2 phe; phe Tốt/Sói phải loại hết cả phe 3. Đường Bá Hổ chọn đúng Thu Hương thì phe 3 thắng ngay */
+{ const _cw=checkWin; checkWin=function(){
+  if(on('duongbaho')&&S.dbh&&S.dbh.win) return S.dbh.win;
+  if(on('codauma')&&S.assign.dan){ const P=nums(), p3=P.filter(p=>alive(p)&&p3Side(p)), oth=P.filter(p=>alive(p)&&!p3Side(p));
+    if(p3.length&&!oth.length) return {side:'p3',reason:'Phe Cô dâu ma (số '+P.filter(p3Side).join(', ')+') đã loại hết phe Tốt và phe Sói.'};
+    const w=_cw(); if(w&&w.side!=='cc'&&p3.length) return null; return w; }
+  return _cw(); }; }
+/* Đồng bộ: cặp đôi chết cùng nhau (sáng bị bắn, ban ngày bị vote/bắn); Thu Hương bị loại thì phe 3 thua */
+function cdSync(){ if(!on('codauma')) return; const b=cdBride(), g=cdG(); if(b==null||g==null) return;
+  if(S.step==='morning'){ [[b,g],[g,b]].forEach(([x,y])=>{ if(S.dead[x]&&!S.dead[y]){ S.dead[y]=1; S.deathAt[y]='Bị loại sáng ngày '+S.night+': kéo theo cặp đôi (Cô dâu ma)'; tlAdd('Ngày '+S.night,{d:y,t:'Bị kéo theo cặp đôi (Cô dâu ma)'}); S.win=checkWin(); } }); }
+  if(S.step==='day'){ S.cdAuto=(S.cdAuto||[]).filter(y=>{ const x=y===b?g:b; if(S.dayPick.includes(x)) return true; S.dayPick=S.dayPick.filter(q=>q!==y); delete S.dayWhy[y]; return false; });
+    [[b,g],[g,b]].forEach(([x,y])=>{ if(S.dayPick.includes(x)&&!S.dayPick.includes(y)&&alive(y)){ S.dayPick.push(y); S.dayWhy[y]='Bị kéo theo cặp đôi (Cô dâu ma)'; S.cdAuto.push(y); } }); } }
+function dbhSync(){ if(!on('duongbaho')) return; S.dbh=S.dbh||{}; if(S.dbh.done) return; const th=holders('thuhuong')[0];
+  if(th!=null&&S.dead[th]){ S.dbh.done=1; S.dbh.lost='Thu Hương (số '+th+') bị loại'; tlAdd((S.step==='night'?'Đêm ':'Ngày ')+S.night,{t:'Thu Hương bị loại: phe thứ 3 thua (vẫn chơi tiếp nhưng không thắng)'}); } }
+function dbhNeed(){ if(!on('duongbaho')||!S.assign.dan) return null; const D=S.dbh||{}; if(D.done) return null; const b=holders('duongbaho')[0], th=holders('thuhuong')[0]; if(b==null) return null;
+  if(th!=null&&(S.dead[th]||(S.step==='day'&&S.dayPick.includes(th)))) return null;
+  if(S.step==='morning'&&!electing()){ if(S.dead[b]) return 'dead'; if(S.night===2) return 'n2'; }
+  if(S.step==='day'&&dayStage()==='res'&&S.dayPick.includes(b)) return 'dead';
+  return null; }
+function dbhHtml(){ if(!on('duongbaho')) return ''; const D=S.dbh||{}, b=holders('duongbaho')[0];
+  if(D.done&&D.t!=null&&D.n===S.night&&D.st===S.step) return `<div class="box ${D.win?'blue':'red'}"><h3>🖌️ Đường Bá Hổ (số ${b}) chọn số ${D.t}</h3><p>${D.win?'Đúng Thu Hương: phe thứ 3 thắng ngay.':'Sai: phe thứ 3 thua (vẫn chơi tiếp nhưng không thắng).'+(D.hunt?' Số '+D.t+' là Thợ săn: bị loại và được bắn.':'')}</p></div>`;
+  const k=dbhNeed(); if(!k) return ''; const sel=S.dbhPick;
+  return `<div class="box red"><h3>🖌️ Đường Bá Hổ (số ${b}) lật bài, chọn Thu Hương</h3><p>${k==='dead'?'Đường Bá Hổ bị loại':'Sáng sau đêm 2, Đường Bá Hổ còn sống'}: lật bài công khai, chọn 1 người. Đúng Thu Hương thì phe thứ 3 thắng ngay; sai thì phe thứ 3 thua. Chọn trúng Thợ săn thì Thợ săn bị loại và được bắn.</p>
+    ${dRing({act:'dbhp',dis:p=>p===b||!!S.dead[p]||(S.step==='day'&&S.dayPick.includes(p)),cls:p=>sel===p?'on':''})}
+    <button class="pill red" style="width:100%" data-a="dbhgo" ${sel==null?'disabled':''}>${sel==null?'Chạm số Đường Bá Hổ chọn':'Chốt: Đường Bá Hổ chọn số '+sel}</button></div>`; }
+function dbhGo(){ const t=S.dbhPick; if(t==null||!dbhNeed()) return; save(); const b=holders('duongbaho')[0], th=holders('thuhuong')[0], ph=(S.step==='day'?'Ngày ':'Ngày ')+S.night;
+  S.dbh=S.dbh||{}; Object.assign(S.dbh,{done:1,t,n:S.night,st:S.step}); S.dbhPick=null;
+  if(t===th){ S.dbh.win={side:'p3',reason:'Đường Bá Hổ (số '+b+') chọn đúng Thu Hương (số '+th+'): phe thứ 3 thắng ngay.'}; tlAdd(ph,{t:'Đường Bá Hổ chọn số '+t+': đúng Thu Hương, phe thứ 3 thắng'}); }
+  else { S.dbh.lost='chọn sai'; tlAdd(ph,{t:'Đường Bá Hổ chọn số '+t+': sai, phe thứ 3 thua'});
+    if(roleOf(t)==='thosan'&&alive(t)){ S.dbh.hunt=1;
+      if(S.step==='day'){ if(!S.dayPick.includes(t)) S.dayPick.push(t); S.dayWhy[t]='Bị Đường Bá Hổ chọn (Thợ săn)'; }
+      else { S.dead[t]=1; S.deathAt[t]='Bị loại sáng ngày '+S.night+': bị Đường Bá Hổ chọn (Thợ săn)'; tlAdd(ph,{d:t,t:'Bị Đường Bá Hổ chọn (Thợ săn): bị loại, được bắn'});
+        S.report.dbhOut=(S.report.dbhOut||[]).concat([t]); S.report.why[t]='Bị Đường Bá Hổ chọn'; } } }
+  if(S.step==='morning') S.win=checkWin(); }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-a]'); if(!b||b.disabled) return; const a=b.dataset.a;
+  if(a==='dbhp'){ const p=+b.dataset.v; S.dbhPick=S.dbhPick===p?null:p; render(); }
+  else if(a==='dbhgo'){ dbhGo(); render(); }
+  else if(a==='wst'){ const c=S.cur.phuthuy; if(c){ save(); c.st=b.dataset.v==='cd'?'cd':undefined; render(); } } });
+{ const _vm=vMorning; vMorning=function(){ const o=_vm(); if(dbhNeed()){ o.ok=false; o.hint='Đường Bá Hổ chọn người'; } return o; }; }
+{ const _vd=vDay; vDay=function(){ cdSync(); const o=_vd(); if(dbhNeed()){ o.ok=false; o.hint='Đường Bá Hổ chọn người'; } return o; }; }
+{ const _r=render; render=function(){ try{ if(S.step==='morning'||S.step==='day'||S.step==='night'){ dbhSync(); if(S.step==='morning') cdSync(); } }catch(e){} return _r.apply(this,arguments); }; }
+{ const _dh=dayHints; dayHints=function(){ const h=_dh(); if(on('codauma')) (S.cdAuto||[]).forEach(y=>h.push('Số '+y+' ('+(y===cdG()?'Chú rể':'Cô dâu ma')+') bị kéo theo: cặp đôi chết cùng nhau.'+(roleOf(y)==='thosan'?' Thợ săn chết theo cặp đôi không được bắn.':''))); return h; }; }
+{ const _sb=seatBadge; seatBadge=function(p){ let h=_sb(p); if(on('codauma')){ if(p===cdG()||p===cdW()) h+=`<i class="gunb" title="${p===cdG()?'Chú rể':'Người chứng hôn'}">${p===cdG()?'💍':'📜'}</i>`; } return h; }; }
+/* Luật chơi (mã QR) */
+{ const _cr=cfgRules; cfgRules=function(c){ const out=_cr(c), has=k=>c.o.includes(k);
+  if(has('duongbaho')){ out[0]={i:'🏆',h:'Điều kiện thắng',lines:[{c:'tot',h:'Phe Tốt thắng khi:',p:'loại 3 Sói.'},{c:'soi',h:'Phe Sói thắng khi:',p:'loại 3 Thần hoặc 3 Dân (Đường Bá Hổ, Thu Hương không tính).'},{c:'tot',h:'Phe thứ 3 thắng khi:',p:'Đường Bá Hổ chọn đúng Thu Hương trước khi 2 phe kia đạt điều kiện thắng.'}]};
+    out.push({i:'🖌️',h:'Đường Bá Hổ điểm Thu Hương',p:'Đêm 1 Đường Bá Hổ dậy, Thu Hương dậy và được biết ai là Đường Bá Hổ. Đường Bá Hổ bị loại (bất kỳ cách nào) hoặc sáng sau đêm 2 nếu còn sống: lật bài công khai chọn 1 người. Đúng Thu Hương thì phe thứ 3 thắng ngay; sai, hoặc Thu Hương bị loại trước, thì phe thứ 3 thua nhưng vẫn chơi tiếp (không thắng). Chọn trúng Thợ săn: Thợ săn bị loại và được bắn.'}); }
+  if(has('codauma')){ out[0]={i:'🏆',h:'Điều kiện thắng',lines:[{c:'tot',h:'Phe Tốt thắng khi:',p:'loại hết Sói và hết phe thứ 3.'},{c:'soi',h:'Phe Sói thắng khi:',p:'loại hết Thần hoặc hết Dân, và hết phe thứ 3.'},{c:'tot',h:'Phe thứ 3 thắng khi:',p:'loại hết cả phe Tốt lẫn phe Sói.'}]};
+    out.push({i:'💍',h:'Cô dâu ma',p:'Đêm 1: Cô dâu ma chọn Chú rể → cặp đôi cùng chọn Người chứng hôn → Người chứng hôn dậy biết cặp đôi. Chú rể và Người chứng hôn giữ chức năng gốc (vd. Sói vẫn dậy cùng bầy) nhưng về phe thứ 3. Cặp đôi chết cùng nhau. Phe Sói chết hết thì cặp đôi được giết 1 người mỗi đêm; cặp đôi chết thì Người chứng hôn được giết 1 người mỗi đêm. Bảo vệ và bình Cứu chặn được như vết cắn. Thợ săn bị loại vì độc hoặc chết theo cặp đôi thì không được bắn. Tiên tri soi Cô dâu ma ra Tốt.'}); }
+  return out; }; }
 
 if(!xemBoot()){
 S.step='players'; S.n=nums().length; hist=[];
