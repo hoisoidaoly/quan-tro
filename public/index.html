@@ -1393,7 +1393,7 @@ function nightActs(){
       case 'thosanquy': a=S.night>=2&&t!=null&&'săn '+sw(t); break;
       case 'perseus': a=S.night>=2&&t!=null&&'đâm '+sw(t); break;
       case 'acma': a=t!=null&&'soi '+sw(t)+': ra '+(demonKind(act('acma'))||'?'); break;
-      case 'hoangtu': a=S.night>=2&&t!=null&&'kiểm tra số '+t+(S.princess!=null?(t===S.princess?': đúng Công chúa 👍':': không phải 👎'):''); break;
+      case 'hoangtu': a=S.night>=2&&t!=null&&(typeof ccBig==='function'&&ccBig()?'chỉ số '+t+' (soi số '+seatSides(t).join(' và ')+')'+(S.princess!=null?(princeHit(t)?': có Công chúa 👍':': không có 👎'):''):'kiểm tra số '+t+(S.princess!=null?(t===S.princess?': đúng Công chúa 👍':': không phải 👎'):'')); break;
     }
     if(!a&&c.none) a='không thực hiện chức năng';
     if(a) out.push(nm+' '+a);
@@ -1581,7 +1581,7 @@ function vOnTable(){ if(S.step==='morning'){ const nd=(S.report&&S.report.deaths
 const electing=()=>S.step==='morning'&&S.v&&!S.v.annc;
 function vStanding(){ const v=VL(); return v.order.filter(p=>!v.wd.includes(p)&&vOnTable().includes(p)); }
 function vTargets(){ const v=VL(); return v.st==='mvote'?vStanding():v.st==='xvote'?vOnTable():(v.st==='mpk'||v.st==='xpk')?v.pk.filter(p=>vOnTable().includes(p)):[]; }
-function vVoters(){ const v=VL(), t=vOnTable().filter(p=>!isAfk(p)); /* người hóa đá vẫn giơ tay vote, phiếu tính 0 (vW) */
+function vVoters(){ const v=VL(), t=vOnTable().filter(p=>!isAfk(p)&&p!==S.ngocUp); /* người hóa đá vẫn giơ tay vote, phiếu tính 0 (vW) */
   if(v.st==='mvote') return t.filter(p=>!v.cand.includes(p));
   if(v.st==='mpk'||v.st==='xpk') return t.filter(p=>!v.pk.includes(p));
   return v.st==='xvote'?t:[]; }
@@ -1623,6 +1623,8 @@ function vAdvance(){
     S.mayorTorn=1; S.mayorWhy='Hòa phiếu 2 lần khi bầu Thị trưởng: mất cúp.'; tlAdd(ph,{t:'Bầu Thị trưởng vẫn hòa sau PK: mất cúp Thị trưởng'});
     v.mres={bad:1,t:'Vẫn hòa sau PK: mất cúp Thị trưởng, ván này không có Thị trưởng.'}; vRes('Vẫn hòa: mất cúp Thị trưởng'); v.st='xvote'; v.pk=null; return; }
   if(v.st==='xvote'||v.st==='xpk'){ const r=vClose();
+    if(r.win!=null&&typeof ngocSaves==='function'&&ngocSaves(r.win)){ S.ngocUp=r.win; v.xout=null; tlAdd(ph,{t:'Số '+r.win+' bị vote loại, lật bài Kẻ ngốc: không bị loại, mất quyền biểu quyết'});
+      v.xres={calm:1,t:`Số ${r.win} bị vote (${fmtV(r.n)} phiếu) nhưng lật bài Kẻ ngốc: không bị loại, từ nay mất quyền biểu quyết.`}; vRes('Số '+r.win+' lật bài Kẻ ngốc'); v.st='done'; return; }
     if(r.win!=null){ if(!S.dayPick.includes(r.win)) S.dayPick.push(r.win); S.dayWhy[r.win]='Bị vote loại, rời bàn chơi'; v.xout=r.win;
       v.xres={bad:1,t:`Số ${r.win} bị loại với ${fmtV(r.n)} phiếu.`}; vRes('Số '+r.win+' bị loại'); v.st='done'; return; }
     if(r.zero){ tlAdd(ph,{t:'Không ai có phiếu vote loại: không ai bị loại',ok:1}); v.xres={calm:1,t:'Không ai có phiếu: không ai bị loại, bình an vào đêm.'}; vRes('Không ai có phiếu: bình an'); v.st='done'; return; }
@@ -2690,7 +2692,7 @@ function dayHints(){
     if(dd==null) hints.push('Sói Mỹ Nhân mê hoặc số '+ch+'. '+(kHitB?'Bị Kỵ sĩ đâm nên số '+ch+' KHÔNG bị kéo theo.':dd!=null?'':!alive(ch)?'Số '+ch+' đã bị loại từ trước.':S.dayPick.includes(ch)?'Số '+ch+' cũng đã bị loại hôm nay.':'Sói Mỹ Nhân là Sói cuối cùng: không kéo theo ai.')); }
   const dg=curGun(); if(dg!=null&&S.dayPick.includes(dg)) hints.push('Số '+dg+' giữ Súng của Thương nhân bị loại: hết giao dịch.');
   if(S.night===1&&S.trade.phase==='gun') hints.push('Thương nhân: kết quả giao dịch tính khi vào đêm 2.');
-  S.dayPick.forEach(p=>{ const r=roleOf(p); if(r==='ngoc'&&S.puppet!==p&&!knightLocked().includes(p)) hints.push(ngocCanFlipDay(p)?'Số '+p+' là Kẻ ngốc: lật bài công khai là Kẻ ngốc, rồi vẫn bị loại và rời bàn.':'Số '+p+' là Kẻ ngốc nhưng đang ngủ (lời nguyền Công chúa): không được lật bài, bị loại như thường.'); });
+  S.dayPick.forEach(p=>{ const r=roleOf(p); if(r==='ngoc'&&S.puppet!==p&&!knightLocked().includes(p)) hints.push(ccOn()&&S.ngocUp===p?'Số '+p+' là Kẻ ngốc đã lật bài từ trước: lần này bị loại.':ngocCanFlipDay(p)?'Số '+p+' là Kẻ ngốc: lật bài công khai là Kẻ ngốc, rồi vẫn bị loại và rời bàn.':'Số '+p+' là Kẻ ngốc nhưng đang ngủ (lời nguyền Công chúa): không được lật bài, bị loại như thường.'); });
   const pa=aliveHolders('phongan')[0]; if(pa!=null&&!S.dayPick.includes(pa)) hints.push('Sói Phong Ấn (số '+pa+') không được nổ tự sát.');
   return hints; }
 /* DI NGÔN: công bố người bị loại đêm qua ở ngày đầu tiên (hoặc khi Sói nổ lần 1 trên giàn tranh cử) thì người bị loại được nói lời cuối, thứ tự bốc thăm ngẫu nhiên */
@@ -2937,14 +2939,19 @@ function ngocBlock(){ const h=aliveHolders('ngoc')[0]; if(h==null) return '';
 const ccOn=()=>on('hoangtu');
 const princeSeat=()=>holders('hoangtu')[0];
 function princessValid(){ return ccOn()&&!!S.pOk&&S.princess!=null&&S.princess!==princeSeat(); }
-function princessWoken(){ if(S.pWoke) return true; return S.step==='night'&&S.night>=2&&canUse('hoangtu')&&tgt('hoangtu')===S.princess; }
+/* Bàn 14–15 người: Hoàng tử soi bán kính (2 ghế liền kề tả/hữu của ghế được chỉ), lời nguyền lan nhanh từ đêm 3 */
+const ccBig=()=>ccOn()&&S.n>=14;
+function seatSides(t){ const P=nums(), n=P.length, i=P.indexOf(t); if(i<0) return []; return [P[(i-1+n)%n],P[(i+1)%n]].filter((q,k,a)=>q!==t&&a.indexOf(q)===k); }
+function princeHit(t){ if(t==null||S.princess==null) return false; return ccBig()?seatSides(t).includes(S.princess):t===S.princess; }
+function sleepRad(N){ return ccBig()?(N<=1?0:N===2?1:1+2*(N-2)):Math.max(0,N-1); }
+function princessWoken(){ if(S.pWoke) return true; return S.step==='night'&&S.night>=2&&canUse('hoangtu')&&princeHit(tgt('hoangtu')); }
 function princessActive(){ return princessValid()&&alive(S.princess)&&!princessWoken(); }
 function princessAsleep(p){ return princessActive()&&p===S.princess; }
 /* Vote loại: Công chúa còn ngủ (chưa được tìm thấy) có bỏ phiếu thì cộng 0,5 */
 function princessVote(p){ return princessAsleep(p); }
 /* Đêm N: Công chúa + N−1 ghế mỗi bên (tính cả ghế đã bị loại). Hoàng tử miễn nhiễm. */
 function sleepSet(){ const out=new Set(); if(!princessActive()) return out;
-  const P=nums(), n=P.length, i=P.indexOf(S.princess); if(i<0) return out; const rad=Math.max(0,S.night-1);
+  const P=nums(), n=P.length, i=P.indexOf(S.princess); if(i<0) return out; const rad=sleepRad(S.night);
   for(let k=-rad;k<=rad;k++) out.add(P[((i+k)%n+n)%n]);
   const pr=princeSeat(); if(pr!=null) out.delete(pr); return out; }
 const asleep=p=>sleepSet().has(p);
@@ -2970,7 +2977,7 @@ finishNight=function(){
     else { let dying=new Set(); try{ dying=new Set(resolve().deaths); }catch(e){}
       if(dying.has(g)) why='Gấu bị loại đêm nay'; else { const nb=bearNeighbors(g); roar=nb.some(isWolfSide); why='ngồi cạnh số '+nb.join(' và ')+(roar?' (có Sói)':' (không có Sói)'); } }
     bear={night:N,roar,why}; }
-  const wake=N>=2&&princessValid()&&alive(S.princess)&&!S.pWoke&&canUse('hoangtu')&&tgt('hoangtu')===S.princess;
+  const wake=N>=2&&princessValid()&&alive(S.princess)&&!S.pWoke&&canUse('hoangtu')&&princeHit(tgt('hoangtu'));
   if(wake) S.pWoke=N;
   _finishNight();
   if(S.muteN&&S.muteN.p!=null){ const m=S.muteN.p; if(!alive(m)) S.muteN.dead=1; else tlAdd('Đêm '+N,{d:m,t:'Bị Trưởng lão câm cấm ngôn'}); }
@@ -3001,18 +3008,22 @@ function princeBlock(){
   if(S.night===1){ const p=S.princess;
     if(p==null) return `<div class="note">Bốc thăm ngẫu nhiên <b>Công chúa</b> trong số người chơi (trừ Hoàng tử số ${pr}). Chỉ quản trò biết, kể cả Công chúa cũng không biết.</div><button class="skip on" data-a="ccpick">👑 Chọn Công chúa</button>`;
     return `${nRing({cls:q=>q===p?'on':'',mid:`<div class="mid">${art('congchua')}<b>Số ${p}</b><small>${esc(pname(p)||'Công chúa')}</small></div>`})}
-      <div class="note"><b>Số ${p}</b> là Công chúa: ngủ từ đêm nay, mỗi đêm lời nguyền lan thêm 1 ghế mỗi bên.</div>
+      <div class="note"><b>Số ${p}</b> là Công chúa: ngủ từ đêm nay, ${ccBig()?'đêm 2 lan thêm 1 ghế mỗi bên, từ đêm 3 mỗi đêm lan thêm 2 ghế mỗi bên (bàn 14–15 người)':'mỗi đêm lời nguyền lan thêm 1 ghế mỗi bên'}.</div>
       ${S.pOk?'':`<div class="row2"><button class="pill" data-a="ccpick">🎲 Chọn lại</button><button class="pill gold" data-a="ccok">✓ Xác nhận</button></div>`}`; }
   if(!princessValid()) return '<div class="note">Ván này không có Công chúa. Vẫn gọi Hoàng tử cho đúng nhịp rồi mời ngủ.</div>';
   if(S.pWoke) return `<div class="note">Hoàng tử đã tìm thấy Công chúa (số ${S.princess}) từ đêm ${S.pWoke}. Vẫn gọi cho đúng nhịp rồi mời ngủ.</div>`;
   if(!alive(S.princess)) return `<div class="note">Công chúa (số ${S.princess}) đã bị loại. Vẫn gọi Hoàng tử cho đúng nhịp rồi mời ngủ.</div>`;
   const t=tgt('hoangtu');
+  if(ccBig()){ const sd=t!=null?seatSides(t):[], hit=princeHit(t);
+    return pick('hoangtu',1,{title:'Hoàng tử chỉ 1 số ghế',sub:'Soi bán kính: kiểm tra 2 ghế liền kề tả/hữu của ghế được chỉ (không tính chính ghế đó)'})+(t!=null?`<div class="result"><div class="r ${hit?'tot':'soi'}">${hit?'👍 Có Công chúa':'👎 Không có'}</div><small>Vùng soi: số ${sd.join(' và ')}. ${hit?'Ra hiệu 👍. Công chúa tỉnh lại, lời nguyền được gỡ ngay từ lúc này. Không công bố cho cả bàn.':'Ra hiệu 👎.'}</small></div>`:''); }
   return pick('hoangtu',1,{title:'Hoàng tử kiểm tra ai?',dis:q=>q===pr?'self':null})+(t!=null?`<div class="result"><div class="r ${t===S.princess?'tot':'soi'}">${t===S.princess?'👍 Đúng Công chúa':'👎 Không phải'}</div><small>${t===S.princess?'Ra hiệu 👍. Công chúa tỉnh lại, lời nguyền được gỡ ngay từ lúc này. Không công bố cho cả bàn.':'Ra hiệu 👎.'}</small></div>`:''); }
 const _actionBlock=actionBlock;
 actionBlock=function(id){ return id==='hoangtu'?princeBlock():id==='ngoc'&&ccOn()?ngocBlock():_actionBlock(id); };
 TASK.ngoc='Kẻ ngốc';
 /* Ban ngày: Kẻ ngốc ngủ thì bị vote không được lật bài */
 function ngocCanFlipDay(p){ return !ccOn()||!princessActive()||!(S.ngocNo&&S.ngocNo.day===S.night&&S.ngocNo.p===p); }
+/* Set Công chúa: Kẻ ngốc không ngủ bị vote loại thì lật bài tự cứu (mất quyền biểu quyết); đang ngủ thì bị loại như Dân. Đã lật rồi thì lần sau bị vote là bị loại. */
+function ngocSaves(p){ return ccOn()&&roleOf(p)==='ngoc'&&S.puppet!==p&&S.ngocUp!==p&&ngocCanFlipDay(p); }
 function sleepAlert(id,h){ return `<div class="sealalert" style="background:#2E4A7A;border-color:#8EB5F0"><div class="big">💤 ĐANG NGỦ</div><p><b>Số ${h}</b> (${esc(stepName(id))}) đang trong Giấc ngủ sâu. Gọi dậy, <b>ra hiệu ❌</b>: đêm nay không dùng được chức năng.</p></div>`; }
 function curseBanner(){ if(!princessActive()) return ''; const z=[...sleepSet()].sort((a,b)=>a-b);
   return `<div class="cursebar">💤 Lời nguyền: số <b>${z.join(', ')}</b> đang ngủ <small>Công chúa số ${S.princess} · chỉ quản trò biết</small></div>`; }
@@ -3020,6 +3031,7 @@ function seatBadge(p){ const r=S.puppet===p?'roi':roleOf(p); let h=r&&r!=='dan'&
   if(ccOn()&&S.princess!=null&&S.princess===p&&S.princess!==princeSeat()) h+=`<i class="crn ${princessActive()?'':'off'}">${art('congchua')}</i>`;
   if(S.step==='night'&&asleep(p)) h+='<i class="zz">z</i>';
   if(isAfk(p)&&!S.dead[p]) h+='<i class="afkb">AFK</i>';
+  if(S.ngocUp===p&&!S.dead[p]) h+='<i class="afkb" title="Kẻ ngốc đã lật bài: mất quyền biểu quyết">NGỐC</i>';
   if(S.on&&S.on.xathu&&!S.dead[p]&&(xtRecv().includes(p)||(S.step!=='night'&&(S.xt||[]).includes(p)))) h+='<i class="gunb" title="Được Xạ thủ cho súng">🔫</i>';
   else if(S.on&&S.on.thantai&&!S.dead[p]&&ttGun(p)) h+='<i class="gunb" title="Súng Thần tài">🔫</i>';
   if(S.on&&S.on.detmong&&!S.dead[p]&&((S.step==='night'&&tgt('detmong')===p)||(S.step!=='night'&&S.dmLast===p))) h+='<i class="dmb" title="Đang mộng du">🌙</i>';
@@ -3124,12 +3136,13 @@ function cfgRules(c){ const has=k=>c.o.includes(k), R=c.r||{}, out=[];
     out.push({i:'💋',h:'Sói Mỹ Nhân · '+(strong?'Mạnh':'Yếu'),p:'Sói Mỹ Nhân bị loại (ban đêm, bị vote hay bị bắn) thì kéo theo người đang bị mê hoặc, trừ khi bị Kỵ sĩ đâm. '+(strong?'Mỹ Nhân là Sói cuối vẫn kéo theo; kéo theo Thần hoặc Dân cuối cùng thì phe Sói thắng.':'Mỹ Nhân là Sói cuối thì không kéo theo ai.')}); }
   if(R.lastGod&&has('thosan')) out.push({i:'🎯',h:'Thợ săn là Thần cuối',p:'Thợ săn là Thần cuối cùng còn sống thì bị loại không được bắn.'});
   if(has('hoangtu')){
-    out.push({i:'💤',h:'Lời nguyền Giấc ngủ sâu',art:'congchua',p:'Đêm 1 quản trò bốc thăm bí mật 1 người làm Công chúa (không phải Hoàng tử). Không ai biết, kể cả Công chúa. Từ đêm đó Công chúa ngủ, mỗi đêm lời nguyền lan thêm 1 ghế mỗi bên (tính cả ghế đã bị loại). Hoàng tử miễn nhiễm.'});
+    out.push({i:'💤',h:'Lời nguyền Giấc ngủ sâu',art:'congchua',p:'Đêm 1 quản trò bốc thăm bí mật 1 người làm Công chúa (không phải Hoàng tử). Không ai biết, kể cả Công chúa. Từ đêm đó Công chúa ngủ, '+(c.n>=14?'đêm 2 lan thêm 1 ghế mỗi bên, từ đêm 3 mỗi đêm lan thêm 2 ghế mỗi bên (ngủ thêm 4 người)':'mỗi đêm lời nguyền lan thêm 1 ghế mỗi bên')+' (tính cả ghế đã bị loại). Hoàng tử miễn nhiễm.'});
+    if(c.n>=14) out.push({i:'🔭',h:'Hoàng tử soi bán kính (14–15 người)',p:'Từ đêm 2, Hoàng tử chỉ 1 số ghế. Quản trò ra hiệu 👍 nếu 1 trong 2 ghế liền kề tả/hữu của ghế đó là Công chúa (không tính chính ghế đó). 👍 là tìm thấy: Công chúa tỉnh lại, lời nguyền được gỡ.'});
     out.push({i:'🌙',h:'Người đang ngủ',p:'Gấu không gầm. Phù thủy không dùng được bình Độc (bình Cứu vẫn được). Thợ săn bị loại khi đang ngủ không được bắn. Trưởng lão câm không cấm ngôn được.'+(has('ngoc')?' Kẻ ngốc bị vote không được lật bài.':'')+' Tất cả Sói còn sống đều ngủ thì đêm đó không cắn.'});
     out.push({i:'✋',h:'Phiếu của Công chúa',p:'Công chúa còn ngủ (chưa được tìm thấy) có 1,5 phiếu khi vote loại, làm Thị trưởng thì 2 phiếu. Bầu Thị trưởng và vòng PK vẫn tính 1 phiếu.'});
     out.push({i:'🌹',h:'Gỡ lời nguyền',p:'Hoàng tử tìm đúng Công chúa hoặc Công chúa bị loại thì lời nguyền được gỡ hết, Công chúa tỉnh lại về phe gốc.'});
     out.push({i:'✨',h:'Công chúa thắng riêng',p:'Phe Tốt hoặc phe Sói đạt điều kiện thắng mà Công chúa còn sống và chưa được tìm thấy thì Công chúa thắng riêng, tất cả người còn lại thua.'});
-    if(has('ngoc')) out.push({i:'🃏',h:'Kẻ ngốc mỗi đêm',p:'Kẻ ngốc được gọi dậy mỗi đêm sau Thợ săn: 👍 sáng mai bị vote được lật bài, 👎 đang ngủ nên không được lật bài.'}); }
+    if(has('ngoc')) out.push({i:'🃏',h:'Kẻ ngốc mỗi đêm',p:'Kẻ ngốc được gọi dậy mỗi đêm sau Thợ săn: 👍 sáng mai bị vote được lật bài tự cứu (không bị loại, mất quyền biểu quyết), 👎 đang ngủ nên không được lật bài, bị loại như Dân thường.'}); }
   return out; }
 function xemHtml(c){ const {good,wolf}=cfgRoles(c);
   const row=x=>`<div class="xr ${x.r.t}"><div class="xa">${art(x.k)}</div><div class="xt"><b>${esc(x.r.n)}${x.n>1?` <em>×${x.n}</em>`:''}${x.r.mech?' <i>cơ chế</i>':''}</b><p>${esc(pdOf(x.k,c))}</p></div></div>`;
