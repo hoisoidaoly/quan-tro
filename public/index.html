@@ -765,6 +765,7 @@ body.night .task .who.tot{color:#9CC0E6}body.night .task .who.soi{color:#F0907C}
 .field label{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--village)}
 .field small{font-size:13px;color:var(--mute)}
 .select{position:relative}
+.setq{margin:0 0 8px}.setres[hidden]{display:none}.setres{margin:0 0 10px;display:flex;flex-direction:column;gap:6px}.setres button{text-align:left;border:1.5px solid var(--bark);border-radius:10px;background:var(--paper);padding:11px 12px;font:700 15px var(--body);color:var(--ink)}.setres button.on{background:var(--gold-soft)}.setres p{margin:4px 2px;color:var(--mute);font-size:14px}
 .select select{width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid var(--bark);border-radius:14px;background:var(--paper);padding:14px 44px 14px 14px;font:700 16px var(--body);color:var(--ink);box-shadow:0 3px 0 var(--bark)}
 .select::after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;border-right:2.5px solid var(--bark);border-bottom:2.5px solid var(--bark);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 /* thông báo hoàn tác */
@@ -1754,6 +1755,17 @@ function roleGroup(side,title,ids,row,count){
     <div class="rgon">${chips||'<em>Chưa bật vai nào · chạm để mở</em>'}</div></summary>
     <div class="rlist ${side}">${ids.map(row).join('')}</div></details>`;
 }
+/* Danh sách set xếp theo chữ cái + ô tìm set (không dấu) */
+function setList(){ return SETS.filter(s=>s.id!=='mythosan').map(s=>({id:s.id,lb:s.id==='mykysi'?'Sói Mỹ Nhân':s.n})).sort((a,b)=>a.lb.localeCompare(b.lb,'vi')); }
+function setFilter(){ const i=document.getElementById('setq'), box=document.getElementById('setres'); if(!i||!box) return; const q=normVN(i.value.trim());
+  const x=i.parentNode.querySelector('[data-a="sqclear"]'); if(x) x.hidden=!q;
+  if(!q){ box.hidden=true; box.innerHTML=''; return; }
+  const L=setList().filter(s=>normVN(s.lb+' '+s.id).includes(q)||normVN(s.lb).split(' ').map(w=>w[0]).join('').includes(q.replace(/\s/g,'')));
+  box.hidden=false; box.innerHTML=L.length?L.map(s=>`<button data-a="setpick" data-v="${s.id}" class="${S.set===s.id||(s.id==='mykysi'&&S.set==='mythosan')?'on':''}">${esc(s.lb)}</button>`).join(''):'<p>Không tìm thấy set nào.</p>'; }
+document.addEventListener('input',e=>{ if(e.target&&e.target.dataset&&e.target.dataset.sq) setFilter(); });
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-a]'); if(!b) return;
+  if(b.dataset.a==='setpick'){ save(); applySet(b.dataset.v); render(); }
+  else if(b.dataset.a==='sqclear'){ const i=document.getElementById('setq'); if(i){ i.value=''; setFilter(); i.focus(); } } });
 function roleFilter(){
   const q=normVN(roleQ.trim()); let any=false;
   document.querySelectorAll('.rgrp').forEach(g=>{ let n=0;
@@ -1796,7 +1808,7 @@ function render(){ try{ tradeLost(); }catch(e){} try{ const ab=document.getEleme
       <button class="${S.rules.mnLast!=='nodrag'?'on':''}" data-a="rule" data-id="mnLast" data-v="drag">Vẫn kéo theo<small>Kéo theo Thần/Dân cuối thì Sói thắng</small></button>
       <button class="${S.rules.mnLast==='nodrag'?'on':''}" data-a="rule" data-id="mnLast" data-v="nodrag">Không kéo ai<small>Set Sói Mỹ - Thợ săn</small></button></div></div>`:'';
     html=`<p class="eyebrow" style="margin-top:24px">Bước 2 / 3</p><div class="h1row"><h1>Setup vai cho ${S.n} người</h1><button class="resetbtn" data-a="resetroles">↺ Reset</button></div><p class="lead">Phe Tốt trước, rồi tới phe Sói. Tổng số lá bài phải bằng số người chơi. Bấm sai thì bấm Reset để tắt hết vai và chọn lại từ đầu.</p>
-    <div class="field"><label for="setsel">Set có sẵn</label><div class="select"><select id="setsel" data-sel="set">${SETS.filter(s=>s.id!=='mythosan').map(s=>`<option value="${s.id}" ${S.set===s.id||(s.id==='mykysi'&&S.set==='mythosan')?'selected':''}>${esc(s.id==='mykysi'?'Sói Mỹ Nhân':s.n)}</option>`).join('')}<option value="" ${!cur?'selected':''}>Tự chọn vai</option></select></div>${['mykysi','mythosan'].includes(S.set)?mnModeHtml():''}<small>${setInfo}</small></div>
+    <div class="field"><label for="setsel">Set có sẵn</label><div class="rsearch setq"><input id="setq" data-sq="1" type="text" placeholder="🔍 Tìm set (vd: co dau, my nhan)" autocomplete="off" enterkeyhint="search" aria-label="Tìm set game"><button data-a="sqclear" hidden aria-label="Xóa tìm kiếm">✕</button></div><div class="setres" id="setres" hidden></div><div class="select"><select id="setsel" data-sel="set"><option value="" ${!cur?'selected':''}>Tự chọn vai</option>${setList().map(s=>`<option value="${s.id}" ${S.set===s.id||(s.id==='mykysi'&&S.set==='mythosan')?'selected':''}>${esc(s.lb)}</option>`).join('')}</select></div>${['mykysi','mythosan'].includes(S.set)?mnModeHtml():''}<small>${setInfo}</small></div>
     <div class="tally ${st}"><b>${t}/${S.n}</b><div class="bar"><i style="width:${Math.min(100,t/S.n*100)}%"></i></div><span class="sub">${S.n-t>0?'Còn thiếu '+(S.n-t):t>S.n?'Thừa '+(t-S.n):'Đủ bài'}</span></div>
     ${rules}
     ${swingBox()}
